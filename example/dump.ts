@@ -8,8 +8,6 @@ import {
   Tag,
 } from '../src';
 
-const MAX_READ_BYTES = 4096n;
-
 async function formatKey(cursor: ReadCursor): Promise<string> {
   const tag = cursor.slotPtr.slot.tag;
 
@@ -18,7 +16,7 @@ async function formatKey(cursor: ReadCursor): Promise<string> {
       return '(none)';
     case Tag.BYTES:
     case Tag.SHORT_BYTES: {
-      const bytes = await cursor.readBytes(MAX_READ_BYTES);
+      const bytes = await cursor.readBytes(null);
       const text = new TextDecoder().decode(bytes);
       return `"${text}"`;
     }
@@ -119,7 +117,7 @@ async function printValue(cursor: ReadCursor, indent: string): Promise<void> {
 
     case Tag.BYTES:
     case Tag.SHORT_BYTES: {
-      const bytesObj = await cursor.readBytesObject(MAX_READ_BYTES);
+      const bytesObj = await cursor.readBytesObject(null);
       const text = new TextDecoder().decode(bytesObj.value);
       const isPrintable = /^[\x20-\x7E\n\r\t]*$/.test(text);
 

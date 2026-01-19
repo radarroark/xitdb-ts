@@ -99,12 +99,12 @@ export class ReadCursor implements Slotted {
     return view.getFloat64(0, false);
   }
 
-  async readBytes(maxSizeMaybe?: bigint): Promise<Uint8Array> {
+  async readBytes(maxSizeMaybe: bigint | null = null): Promise<Uint8Array> {
     const bytesObj = await this.readBytesObject(maxSizeMaybe);
     return bytesObj.value;
   }
 
-  async readBytesObject(maxSizeMaybe?: bigint): Promise<Bytes> {
+  async readBytesObject(maxSizeMaybe: bigint | null = null): Promise<Bytes> {
     const reader = this.db.core.reader();
 
     switch (this.slotPtr.slot.tag) {
@@ -114,7 +114,7 @@ export class ReadCursor implements Slotted {
         await this.db.core.seek(this.slotPtr.slot.value);
         const valueSize = await reader.readLong();
 
-        if (maxSizeMaybe !== undefined && valueSize > maxSizeMaybe) {
+        if (maxSizeMaybe !== null && valueSize > maxSizeMaybe) {
           throw new StreamTooLongException();
         }
 
@@ -146,7 +146,7 @@ export class ReadCursor implements Slotted {
           valueSize += 1;
         }
 
-        if (maxSizeMaybe !== undefined && BigInt(valueSize) > maxSizeMaybe) {
+        if (maxSizeMaybe !== null && BigInt(valueSize) > maxSizeMaybe) {
           throw new StreamTooLongException();
         }
 
