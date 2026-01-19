@@ -3,7 +3,7 @@ xitdb is an immutable database written in TypeScript.
 * Each transaction efficiently creates a new "copy" of the database, and past copies can still be read from.
 * It supports writing to a file as well as purely in-memory use.
 * No query engine of any kind. You just write data structures (primarily an `ArrayList` and `HashMap`) that can be nested arbitrarily.
-* No dependencies (file-based databases require the [Bun](https://bun.com/) runtime).
+* No dependencies besides the JavaScript standard library.
 * This project is a port of the [original Zig version](https://github.com/radarroark/xitdb) and the [Java version](https://github.com/radarroark/xitdb-java).
 
 This database was originally made for the [xit version control system](https://github.com/radarroark/xit), but I bet it has a lot of potential for other projects. The combination of being immutable and having an API similar to in-memory data structures is pretty powerful. Consider using it [instead of SQLite](https://gist.github.com/radarroark/03a0724484e1111ef4c05d72a935c42c) for your TypeScript projects: it's simpler, it's pure TypeScript, and it creates no impedance mismatch with your program the way SQL databases do.

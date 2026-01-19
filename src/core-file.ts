@@ -1,14 +1,13 @@
 import type { Core, DataReader, DataWriter } from './core';
+import * as fs from 'fs/promises';
+import type { FileHandle } from 'fs/promises';
 
 class FileDataReader implements DataReader {
-  private file: Bun.FileBlob;
+  private fileHandle: FileHandle;
   private position: number;
-  private buffer: Uint8Array | null = null;
-  private bufferStart: number = 0;
-  private bufferEnd: number = 0;
 
-  constructor(file: Bun.FileBlob, position: number) {
-    this.file = file;
+  constructor(fileHandle: FileHandle, position: number) {
+    this.fileHandle = fileHandle;
     this.position = position;
   }
 
@@ -21,9 +20,7 @@ class FileDataReader implements DataReader {
   }
 
   async readFully(b: Uint8Array): Promise<void> {
-    const slice = this.file.slice(this.position, this.position + b.length);
-    const data = await slice.arrayBuffer();
-    b.set(new Uint8Array(data));
+    await this.fileHandle.read(b, 0, b.length, this.position);
     this.position += b.length;
   }
 
@@ -56,12 +53,11 @@ class FileDataReader implements DataReader {
 }
 
 class FileDataWriter implements DataWriter {
-  private filePath: string;
+  private fileHandle: FileHandle;
   private position: number;
-  private pendingWrites: { position: number; data: Uint8Array }[] = [];
 
-  constructor(filePath: string, position: number) {
-    this.filePath = filePath;
+  constructor(fileHandle: FileHandle, position: number) {
+    this.fileHandle = fileHandle;
     this.position = position;
   }
 
@@ -74,26 +70,7 @@ class FileDataWriter implements DataWriter {
   }
 
   async write(buffer: Uint8Array): Promise<void> {
-    const file = Bun.file(this.filePath);
-    const currentSize = file.size;
-
-    if (this.position >= currentSize) {
-      // Append to file
-      const existingData = currentSize > 0 ? new Uint8Array(await file.arrayBuffer()) : new Uint8Array(0);
-      const newData = new Uint8Array(this.position + buffer.length);
-      newData.set(existingData);
-      newData.set(buffer, this.position);
-      await Bun.write(this.filePath, newData);
-    } else {
-      // Overwrite in file
-      const existingData = new Uint8Array(await file.arrayBuffer());
-      const newSize = Math.max(existingData.length, this.position + buffer.length);
-      const newData = new Uint8Array(newSize);
-      newData.set(existingData);
-      newData.set(buffer, this.position);
-      await Bun.write(this.filePath, newData);
-    }
-
+    await this.fileHandle.write(buffer, 0, buffer.length, this.position);
     this.position += buffer.length;
   }
 
@@ -118,23 +95,28 @@ class FileDataWriter implements DataWriter {
 
 export class CoreFile implements Core {
   private filePath: string;
+  private fileHandle: FileHandle;
   private _position: number = 0;
   private _reader: FileDataReader;
   private _writer: FileDataWriter;
 
-  constructor(filePath: string) {
+  private constructor(filePath: string, fileHandle: FileHandle) {
     this.filePath = filePath;
-    this._reader = new FileDataReader(Bun.file(filePath), 0);
-    this._writer = new FileDataWriter(filePath, 0);
+    this.fileHandle = fileHandle;
+    this._reader = new FileDataReader(fileHandle, 0);
+    this._writer = new FileDataWriter(fileHandle, 0);
   }
 
   static async create(filePath: string): Promise<CoreFile> {
     // Create file if it doesn't exist
-    const file = Bun.file(filePath);
-    if (!await file.exists()) {
-      await Bun.write(filePath, new Uint8Array(0));
+    try {
+      await fs.access(filePath);
+    } catch {
+      await fs.writeFile(filePath, new Uint8Array(0));
     }
-    return new CoreFile(filePath);
+    // Open file handle for reading and writing
+    const fileHandle = await fs.open(filePath, 'r+');
+    return new CoreFile(filePath, fileHandle);
   }
 
   reader(): DataReader {
@@ -146,8 +128,8 @@ export class CoreFile implements Core {
   }
 
   async length(): Promise<bigint> {
-    const file = Bun.file(this.filePath);
-    return BigInt(file.size);
+    const stats = await this.fileHandle.stat();
+    return BigInt(stats.size);
   }
 
   async seek(pos: bigint): Promise<void> {
@@ -161,17 +143,17 @@ export class CoreFile implements Core {
   }
 
   async setLength(len: bigint): Promise<void> {
-    const file = Bun.file(this.filePath);
-    const currentData = new Uint8Array(await file.arrayBuffer());
-    const newData = currentData.slice(0, Number(len));
-    await Bun.write(this.filePath, newData);
+    await this.fileHandle.truncate(Number(len));
   }
 
   async flush(): Promise<void> {
-    // Bun.write is synchronous to disk
   }
 
   async sync(): Promise<void> {
-    // Bun.write is synchronous to disk
+    await this.fileHandle.sync();
+  }
+
+  async close(): Promise<void> {
+    await this.fileHandle.close();
   }
 }
