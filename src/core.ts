@@ -18,7 +18,7 @@ export interface Core {
   writer(): DataWriter;
   length(): Promise<bigint>;
   seek(pos: bigint): Promise<void>;
-  position(): Promise<bigint>;
+  position(): bigint;
   setLength(len: bigint): Promise<void>;
   flush(): Promise<void>;
   sync(): Promise<void>;

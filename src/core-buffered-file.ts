@@ -29,7 +29,7 @@ export class CoreBufferedFile implements Core {
     await this.file.seek(Number(pos));
   }
 
-  async position(): Promise<bigint> {
+  position(): bigint {
     return BigInt(this.file.position());
   }
 

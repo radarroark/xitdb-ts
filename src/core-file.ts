@@ -3,25 +3,16 @@ import * as fs from 'fs/promises';
 import type { FileHandle } from 'fs/promises';
 
 class FileDataReader implements DataReader {
-  private fileHandle: FileHandle;
-  private position: number;
+  private core: CoreFile;
 
-  constructor(fileHandle: FileHandle, position: number) {
-    this.fileHandle = fileHandle;
-    this.position = position;
-  }
-
-  setPosition(pos: number): void {
-    this.position = pos;
-  }
-
-  getPosition(): number {
-    return this.position;
+  constructor(core: CoreFile) {
+    this.core = core;
   }
 
   async readFully(b: Uint8Array): Promise<void> {
-    await this.fileHandle.read(b, 0, b.length, this.position);
-    this.position += b.length;
+    const position = this.core.position();
+    await this.core.fileHandle.readv([b], Number(position));
+    this.core.seek(position + BigInt(b.length));
   }
 
   async readByte(): Promise<number> {
@@ -53,25 +44,16 @@ class FileDataReader implements DataReader {
 }
 
 class FileDataWriter implements DataWriter {
-  private fileHandle: FileHandle;
-  private position: number;
+  private core: CoreFile;
 
-  constructor(fileHandle: FileHandle, position: number) {
-    this.fileHandle = fileHandle;
-    this.position = position;
-  }
-
-  setPosition(pos: number): void {
-    this.position = pos;
-  }
-
-  getPosition(): number {
-    return this.position;
+  constructor(core: CoreFile) {
+    this.core = core;
   }
 
   async write(buffer: Uint8Array): Promise<void> {
-    await this.fileHandle.write(buffer, 0, buffer.length, this.position);
-    this.position += buffer.length;
+    const position = this.core.position();
+    await this.core.fileHandle.writev([buffer], Number(position));
+    this.core.seek(position + BigInt(buffer.length));
   }
 
   async writeByte(v: number): Promise<void> {
@@ -94,17 +76,13 @@ class FileDataWriter implements DataWriter {
 }
 
 export class CoreFile implements Core {
-  private filePath: string;
-  private fileHandle: FileHandle;
-  private _position: number = 0;
-  private _reader: FileDataReader;
-  private _writer: FileDataWriter;
+  public filePath: string;
+  private _position: bigint = 0n;
+  public fileHandle: FileHandle;
 
   private constructor(filePath: string, fileHandle: FileHandle) {
     this.filePath = filePath;
     this.fileHandle = fileHandle;
-    this._reader = new FileDataReader(fileHandle, 0);
-    this._writer = new FileDataWriter(fileHandle, 0);
   }
 
   static async create(filePath: string): Promise<CoreFile> {
@@ -120,11 +98,11 @@ export class CoreFile implements Core {
   }
 
   reader(): DataReader {
-    return this._reader;
+    return new FileDataReader(this);
   }
 
   writer(): DataWriter {
-    return this._writer;
+    return new FileDataWriter(this);
   }
 
   async length(): Promise<bigint> {
@@ -133,13 +111,11 @@ export class CoreFile implements Core {
   }
 
   async seek(pos: bigint): Promise<void> {
-    this._position = Number(pos);
-    this._reader.setPosition(this._position);
-    this._writer.setPosition(this._position);
+    this._position = pos;
   }
 
-  async position(): Promise<bigint> {
-    return BigInt(this._reader.getPosition());
+  position(): bigint {
+    return this._position;
   }
 
   async setLength(len: bigint): Promise<void> {

@@ -52,8 +52,8 @@ export class RandomAccessBufferedFile implements DataReader, DataWriter {
     return Math.max(this.memoryPos + this.memory.size(), stats.size);
   }
 
-  position(): number {
-    return this.filePos;
+  position(): bigint {
+    return BigInt(this.filePos);
   }
 
   async setLength(len: number): Promise<void> {

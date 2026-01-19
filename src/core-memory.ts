@@ -24,7 +24,7 @@ export class CoreMemory implements Core {
     this.memory.seek(Number(pos));
   }
 
-  async position(): Promise<bigint> {
+  position(): bigint {
     return BigInt(this.memory.getPosition());
   }
 
