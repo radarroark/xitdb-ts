@@ -368,7 +368,7 @@ describe('Database Low Level API', () => {
     } finally {
       await rm(tmpDir, { recursive: true });
     }
-  });
+  }, 20000);
 
   test('low level API with buffered file storage', async () => {
     const tmpDir = await mkdtemp(join(tmpdir(), 'xitdb-'));
@@ -380,7 +380,7 @@ describe('Database Low Level API', () => {
     } finally {
       await rm(tmpDir, { recursive: true });
     }
-  });
+  }, 20000);
 });
 
 // Helper function for high level API tests
@@ -1309,6 +1309,166 @@ async function testLowLevelApi(core: Core, hasher: Hasher): Promise<void> {
       await rootCursor.readPath([new ArrayListGet(-2n), new HashMapGet(new HashMapGetValue(notFoundKey))])
     ).toBeNull();
 
+    // write key that conflicts with foo the first two bytes
+    const smallConflictKey = await db.hasher.digest(new TextEncoder().encode('small conflict'));
+    smallConflictKey[smallConflictKey.length - 1] = fooKey[fooKey.length - 1];
+    smallConflictKey[smallConflictKey.length - 2] = fooKey[fooKey.length - 2];
+    await rootCursor.writePath([
+      new ArrayListInit(),
+      new ArrayListAppend(),
+      new WriteData(await rootCursor.readPathSlot([new ArrayListGet(-1n)])),
+      new HashMapInit(false, false),
+      new HashMapGet(new HashMapGetValue(smallConflictKey)),
+      new WriteData(new Bytes('small')),
+    ]);
+
+    // write key that conflicts with foo the first four bytes
+    const conflictKey = await db.hasher.digest(new TextEncoder().encode('conflict'));
+    conflictKey[conflictKey.length - 1] = fooKey[fooKey.length - 1];
+    conflictKey[conflictKey.length - 2] = fooKey[fooKey.length - 2];
+    conflictKey[conflictKey.length - 3] = fooKey[fooKey.length - 3];
+    conflictKey[conflictKey.length - 4] = fooKey[fooKey.length - 4];
+    await rootCursor.writePath([
+      new ArrayListInit(),
+      new ArrayListAppend(),
+      new WriteData(await rootCursor.readPathSlot([new ArrayListGet(-1n)])),
+      new HashMapInit(false, false),
+      new HashMapGet(new HashMapGetValue(conflictKey)),
+      new WriteData(new Bytes('hello')),
+    ]);
+
+    // read conflicting key
+    const helloCursor = await rootCursor.readPath([
+      new ArrayListGet(-1n),
+      new HashMapGet(new HashMapGetValue(conflictKey)),
+    ]);
+    const helloValue = await helloCursor!.readBytes(MAX_READ_BYTES);
+    expect(new TextDecoder().decode(helloValue)).toBe('hello');
+
+    // we can still read foo
+    const barCursor2 = await rootCursor.readPath([
+      new ArrayListGet(-1n),
+      new HashMapGet(new HashMapGetValue(fooKey)),
+    ]);
+    const barValue2 = await barCursor2!.readBytes(MAX_READ_BYTES);
+    expect(new TextDecoder().decode(barValue2)).toBe('bar');
+
+    // overwrite conflicting key
+    await rootCursor.writePath([
+      new ArrayListInit(),
+      new ArrayListAppend(),
+      new WriteData(await rootCursor.readPathSlot([new ArrayListGet(-1n)])),
+      new HashMapInit(false, false),
+      new HashMapGet(new HashMapGetValue(conflictKey)),
+      new WriteData(new Bytes('goodbye')),
+    ]);
+    const goodbyeCursor = await rootCursor.readPath([
+      new ArrayListGet(-1n),
+      new HashMapGet(new HashMapGetValue(conflictKey)),
+    ]);
+    const goodbyeValue = await goodbyeCursor!.readBytes(MAX_READ_BYTES);
+    expect(new TextDecoder().decode(goodbyeValue)).toBe('goodbye');
+
+    // we can still read the old conflicting key
+    const helloCursor2 = await rootCursor.readPath([
+      new ArrayListGet(-2n),
+      new HashMapGet(new HashMapGetValue(conflictKey)),
+    ]);
+    const helloValue2 = await helloCursor2!.readBytes(MAX_READ_BYTES);
+    expect(new TextDecoder().decode(helloValue2)).toBe('hello');
+
+    // remove the conflicting keys
+    {
+      // foo's slot is an INDEX slot due to the conflict
+      {
+        const mapCursor = await rootCursor.readPath([new ArrayListGet(-1n)]);
+        expect(mapCursor!.slot().tag).toBe(Tag.HASH_MAP);
+
+        const i = Number(BigInt.asUintN(64, bytesToBigInt(fooKey)) & MASK);
+        const slotPos = mapCursor!.slot().value + BigInt(Slot.LENGTH * i);
+        await core.seek(slotPos);
+        const reader = core.reader();
+        const slotBytes = new Uint8Array(Slot.LENGTH);
+        await reader.readFully(slotBytes);
+        const slot = Slot.fromBytes(slotBytes);
+
+        expect(slot.tag).toBe(Tag.INDEX);
+      }
+
+      // remove the small conflict key
+      await rootCursor.writePath([
+        new ArrayListInit(),
+        new ArrayListAppend(),
+        new WriteData(await rootCursor.readPathSlot([new ArrayListGet(-1n)])),
+        new HashMapInit(false, false),
+        new HashMapRemove(smallConflictKey),
+      ]);
+
+      // the conflict key still exists in history
+      expect(
+        await rootCursor.readPath([new ArrayListGet(-2n), new HashMapGet(new HashMapGetValue(smallConflictKey))])
+      ).not.toBeNull();
+
+      // the conflict key doesn't exist in the latest moment
+      expect(
+        await rootCursor.readPath([new ArrayListGet(-1n), new HashMapGet(new HashMapGetValue(smallConflictKey))])
+      ).toBeNull();
+
+      // the other conflict key still exists
+      expect(
+        await rootCursor.readPath([new ArrayListGet(-1n), new HashMapGet(new HashMapGetValue(conflictKey))])
+      ).not.toBeNull();
+
+      // foo's slot is still an INDEX slot due to the other conflicting key
+      {
+        const mapCursor = await rootCursor.readPath([new ArrayListGet(-1n)]);
+        expect(mapCursor!.slot().tag).toBe(Tag.HASH_MAP);
+
+        const i = Number(BigInt.asUintN(64, bytesToBigInt(fooKey)) & MASK);
+        const slotPos = mapCursor!.slot().value + BigInt(Slot.LENGTH * i);
+        await core.seek(slotPos);
+        const reader = core.reader();
+        const slotBytes = new Uint8Array(Slot.LENGTH);
+        await reader.readFully(slotBytes);
+        const slot = Slot.fromBytes(slotBytes);
+
+        expect(slot.tag).toBe(Tag.INDEX);
+      }
+
+      // remove the conflict key
+      await rootCursor.writePath([
+        new ArrayListInit(),
+        new ArrayListAppend(),
+        new WriteData(await rootCursor.readPathSlot([new ArrayListGet(-1n)])),
+        new HashMapInit(false, false),
+        new HashMapRemove(conflictKey),
+      ]);
+
+      // the conflict keys don't exist in the latest moment
+      expect(
+        await rootCursor.readPath([new ArrayListGet(-1n), new HashMapGet(new HashMapGetValue(smallConflictKey))])
+      ).toBeNull();
+      expect(
+        await rootCursor.readPath([new ArrayListGet(-1n), new HashMapGet(new HashMapGetValue(conflictKey))])
+      ).toBeNull();
+
+      // foo's slot is now a KV_PAIR slot, because the branch was shortened
+      {
+        const mapCursor = await rootCursor.readPath([new ArrayListGet(-1n)]);
+        expect(mapCursor!.slot().tag).toBe(Tag.HASH_MAP);
+
+        const i = Number(BigInt.asUintN(64, bytesToBigInt(fooKey)) & MASK);
+        const slotPos = mapCursor!.slot().value + BigInt(Slot.LENGTH * i);
+        await core.seek(slotPos);
+        const reader = core.reader();
+        const slotBytes = new Uint8Array(Slot.LENGTH);
+        await reader.readFully(slotBytes);
+        const slot = Slot.fromBytes(slotBytes);
+
+        expect(slot.tag).toBe(Tag.KV_PAIR);
+      }
+    }
+
     // overwrite foo with uint, int, float
     {
       // overwrite foo with a uint
@@ -1443,6 +1603,222 @@ async function testLowLevelApi(core: Core, hasher: Hasher): Promise<void> {
           new ArrayListGet(1n),
         ])
       ).toBeNull();
+
+      // write pear
+      await rootCursor.writePath([
+        new ArrayListInit(),
+        new ArrayListAppend(),
+        new WriteData(await rootCursor.readPathSlot([new ArrayListGet(-1n)])),
+        new HashMapInit(false, false),
+        new HashMapGet(new HashMapGetValue(fruitsKey)),
+        new ArrayListInit(),
+        new ArrayListAppend(),
+        new WriteData(new Bytes('pear')),
+      ]);
+
+      // write grape
+      await rootCursor.writePath([
+        new ArrayListInit(),
+        new ArrayListAppend(),
+        new WriteData(await rootCursor.readPathSlot([new ArrayListGet(-1n)])),
+        new HashMapInit(false, false),
+        new HashMapGet(new HashMapGetValue(fruitsKey)),
+        new ArrayListInit(),
+        new ArrayListAppend(),
+        new WriteData(new Bytes('grape')),
+      ]);
+
+      // read pear
+      const pearCursor = await rootCursor.readPath([
+        new ArrayListGet(-1n),
+        new HashMapGet(new HashMapGetValue(fruitsKey)),
+        new ArrayListGet(-2n),
+      ]);
+      const pearValue = await pearCursor!.readBytes(MAX_READ_BYTES);
+      expect(new TextDecoder().decode(pearValue)).toBe('pear');
+
+      // read grape
+      const grapeCursor = await rootCursor.readPath([
+        new ArrayListGet(-1n),
+        new HashMapGet(new HashMapGetValue(fruitsKey)),
+        new ArrayListGet(-1n),
+      ]);
+      const grapeValue = await grapeCursor!.readBytes(MAX_READ_BYTES);
+      expect(new TextDecoder().decode(grapeValue)).toBe('grape');
+    }
+  }
+
+  // append to top-level array_list many times, filling up the array_list until a root overflow occurs
+  {
+    await core.setLength(0n);
+    const db = await Database.create(core, hasher);
+    const rootCursor = await db.rootCursor();
+
+    const watKey = await db.hasher.digest(new TextEncoder().encode('wat'));
+
+    for (let i = 0; i < SLOT_COUNT + 1; i++) {
+      const value = `wat${i}`;
+      await rootCursor.writePath([
+        new ArrayListInit(),
+        new ArrayListAppend(),
+        new WriteData(await rootCursor.readPathSlot([new ArrayListGet(-1n)])),
+        new HashMapInit(false, false),
+        new HashMapGet(new HashMapGetValue(watKey)),
+        new WriteData(new Bytes(value)),
+      ]);
+    }
+
+    // verify all values
+    for (let i = 0; i < SLOT_COUNT + 1; i++) {
+      const value = `wat${i}`;
+      const cursor = await rootCursor.readPath([
+        new ArrayListGet(BigInt(i)),
+        new HashMapGet(new HashMapGetValue(watKey)),
+      ]);
+      const value2 = new TextDecoder().decode(await cursor!.readBytes(MAX_READ_BYTES));
+      expect(value).toBe(value2);
+    }
+
+    // add more slots to cause a new index block to be created.
+    // during that transaction, return an error so the transaction is cancelled,
+    // causing truncation to happen. this test ensures that the new index block
+    // is NOT truncated.
+    for (let i = SLOT_COUNT + 1; i < SLOT_COUNT * 2 + 1; i++) {
+      const value = `wat${i}`;
+      const index = i;
+
+      try {
+        await rootCursor.writePath([
+          new ArrayListInit(),
+          new ArrayListAppend(),
+          new WriteData(await rootCursor.readPathSlot([new ArrayListGet(-1n)])),
+          new HashMapInit(false, false),
+          new HashMapGet(new HashMapGetValue(watKey)),
+          new WriteData(new Bytes(value)),
+          new Context(async () => {
+            if (index === 32) {
+              throw new Error('intentional error');
+            }
+          }),
+        ]);
+      } catch (e) {
+        // expected error
+      }
+    }
+
+    // try another append to make sure we still can.
+    // if truncation destroyed the index block, this would fail.
+    await rootCursor.writePath([
+      new ArrayListInit(),
+      new ArrayListAppend(),
+      new WriteData(await rootCursor.readPathSlot([new ArrayListGet(-1n)])),
+      new HashMapInit(false, false),
+      new HashMapGet(new HashMapGetValue(watKey)),
+      new WriteData(new Bytes('wat32')),
+    ]);
+
+    // slice so it contains exactly SLOT_COUNT, so we have the old root again
+    await rootCursor.writePath([new ArrayListInit(), new ArrayListSlice(BigInt(SLOT_COUNT))]);
+
+    // we can iterate over the remaining slots
+    for (let i = 0; i < SLOT_COUNT; i++) {
+      const value = `wat${i}`;
+      const cursor = await rootCursor.readPath([
+        new ArrayListGet(BigInt(i)),
+        new HashMapGet(new HashMapGetValue(watKey)),
+      ]);
+      const value2 = new TextDecoder().decode(await cursor!.readBytes(MAX_READ_BYTES));
+      expect(value).toBe(value2);
+    }
+
+    // but we can't get the value that we sliced out of the array list
+    expect(await rootCursor.readPath([new ArrayListGet(BigInt(SLOT_COUNT + 1))])).toBeNull();
+  }
+
+  // append to inner array_list many times, filling up the array_list until a root overflow occurs
+  {
+    await core.setLength(0n);
+    const db = await Database.create(core, hasher);
+    const rootCursor = await db.rootCursor();
+
+    for (let i = 0; i < SLOT_COUNT + 1; i++) {
+      const value = `wat${i}`;
+      await rootCursor.writePath([
+        new ArrayListInit(),
+        new ArrayListAppend(),
+        new WriteData(await rootCursor.readPathSlot([new ArrayListGet(-1n)])),
+        new ArrayListInit(),
+        new ArrayListAppend(),
+        new WriteData(new Bytes(value)),
+      ]);
+    }
+
+    // verify all values
+    for (let i = 0; i < SLOT_COUNT + 1; i++) {
+      const value = `wat${i}`;
+      const cursor = await rootCursor.readPath([new ArrayListGet(-1n), new ArrayListGet(BigInt(i))]);
+      const value2 = new TextDecoder().decode(await cursor!.readBytes(MAX_READ_BYTES));
+      expect(value).toBe(value2);
+    }
+
+    // slice the inner array list so it contains exactly SLOT_COUNT, so we have the old root again
+    await rootCursor.writePath([
+      new ArrayListInit(),
+      new ArrayListGet(-1n),
+      new ArrayListInit(),
+      new ArrayListSlice(BigInt(SLOT_COUNT)),
+    ]);
+
+    // we can iterate over the remaining slots
+    for (let i = 0; i < SLOT_COUNT; i++) {
+      const value = `wat${i}`;
+      const cursor = await rootCursor.readPath([new ArrayListGet(-1n), new ArrayListGet(BigInt(i))]);
+      const value2 = new TextDecoder().decode(await cursor!.readBytes(MAX_READ_BYTES));
+      expect(value).toBe(value2);
+    }
+
+    // but we can't get the value that we sliced out of the array list
+    expect(await rootCursor.readPath([new ArrayListGet(-1n), new ArrayListGet(BigInt(SLOT_COUNT + 1))])).toBeNull();
+
+    // overwrite the last value with hello
+    await rootCursor.writePath([
+      new ArrayListInit(),
+      new ArrayListAppend(),
+      new WriteData(await rootCursor.readPathSlot([new ArrayListGet(-1n)])),
+      new ArrayListInit(),
+      new ArrayListGet(-1n),
+      new WriteData(new Bytes('hello')),
+    ]);
+
+    // read last value
+    {
+      const cursor = await rootCursor.readPath([new ArrayListGet(-1n), new ArrayListGet(-1n)]);
+      const value = new TextDecoder().decode(await cursor!.readBytes(MAX_READ_BYTES));
+      expect(value).toBe('hello');
+    }
+
+    // overwrite the last value with goodbye
+    await rootCursor.writePath([
+      new ArrayListInit(),
+      new ArrayListAppend(),
+      new WriteData(await rootCursor.readPathSlot([new ArrayListGet(-1n)])),
+      new ArrayListInit(),
+      new ArrayListGet(-1n),
+      new WriteData(new Bytes('goodbye')),
+    ]);
+
+    // read last value
+    {
+      const cursor = await rootCursor.readPath([new ArrayListGet(-1n), new ArrayListGet(-1n)]);
+      const value = new TextDecoder().decode(await cursor!.readBytes(MAX_READ_BYTES));
+      expect(value).toBe('goodbye');
+    }
+
+    // previous last value is still hello
+    {
+      const cursor = await rootCursor.readPath([new ArrayListGet(-2n), new ArrayListGet(-1n)]);
+      const value = new TextDecoder().decode(await cursor!.readBytes(MAX_READ_BYTES));
+      expect(value).toBe('hello');
     }
   }
 
@@ -1609,6 +1985,197 @@ async function testLowLevelApi(core: Core, hasher: Hasher): Promise<void> {
       expect(i).toBe(10);
     }
   }
+
+  {
+    // slice linked_array_list
+    await testSlice(core, hasher, SLOT_COUNT * 5 + 1, 10n, 5n);
+    await testSlice(core, hasher, SLOT_COUNT * 5 + 1, 0n, BigInt(SLOT_COUNT * 2));
+    await testSlice(core, hasher, SLOT_COUNT * 5, BigInt(SLOT_COUNT * 3), BigInt(SLOT_COUNT));
+    await testSlice(core, hasher, SLOT_COUNT * 5, BigInt(SLOT_COUNT * 3), BigInt(SLOT_COUNT * 2));
+    await testSlice(core, hasher, SLOT_COUNT * 2, 10n, BigInt(SLOT_COUNT));
+    await testSlice(core, hasher, 2, 0n, 2n);
+    await testSlice(core, hasher, 2, 1n, 1n);
+    await testSlice(core, hasher, 1, 0n, 0n);
+
+    // concat linked_array_list
+    await testConcat(core, hasher, BigInt(SLOT_COUNT * 5 + 1), BigInt(SLOT_COUNT + 1));
+    await testConcat(core, hasher, BigInt(SLOT_COUNT), BigInt(SLOT_COUNT));
+    await testConcat(core, hasher, 1n, 1n);
+    await testConcat(core, hasher, 0n, 0n);
+
+    // insert linked_array_list
+    await testInsertAndRemove(core, hasher, 1, 0n);
+    await testInsertAndRemove(core, hasher, 10, 0n);
+    await testInsertAndRemove(core, hasher, 10, 5n);
+    await testInsertAndRemove(core, hasher, 10, 9n);
+    await testInsertAndRemove(core, hasher, SLOT_COUNT * 5, BigInt(SLOT_COUNT * 2));
+  }
+
+  // concat linked_array_list multiple times
+  {
+    await core.setLength(0n);
+    const db = await Database.create(core, hasher);
+    const rootCursor = await db.rootCursor();
+
+    const evenKey = await db.hasher.digest(new TextEncoder().encode('even'));
+    const comboKey = await db.hasher.digest(new TextEncoder().encode('combo'));
+
+    await rootCursor.writePath([
+      new ArrayListInit(),
+      new ArrayListAppend(),
+      new WriteData(await rootCursor.readPathSlot([new ArrayListGet(-1n)])),
+      new HashMapInit(false, false),
+      new Context(async (cursor) => {
+        // create list
+        for (let i = 0; i < SLOT_COUNT + 1; i++) {
+          const n = BigInt(i * 2);
+          await cursor.writePath([
+            new HashMapGet(new HashMapGetValue(evenKey)),
+            new LinkedArrayListInit(),
+            new LinkedArrayListAppend(),
+            new WriteData(new Uint(n)),
+          ]);
+        }
+
+        // get list slot
+        const evenListCursor = await cursor.readPath([new HashMapGet(new HashMapGetValue(evenKey))]);
+        expect(await evenListCursor!.count()).toBe(BigInt(SLOT_COUNT + 1));
+
+        // check all values in the new slice with an iterator
+        {
+          const innerCursor = await cursor.readPath([new HashMapGet(new HashMapGetValue(evenKey))]);
+          const iter = innerCursor!.iterator();
+          await iter.init();
+          let i = 0;
+          while (await iter.hasNext()) {
+            await iter.next();
+            i += 1;
+          }
+          expect(i).toBe(SLOT_COUNT + 1);
+        }
+
+        // concat the list with itself multiple times.
+        // since each list has 17 items, each concat will create a gap, causing a root overflow
+        // before a normal array list would've.
+        let comboListCursor = await cursor.writePath([
+          new HashMapGet(new HashMapGetValue(comboKey)),
+          new WriteData(evenListCursor!.slotPtr.slot),
+          new LinkedArrayListInit(),
+        ]);
+        for (let i = 0; i < 16; i++) {
+          comboListCursor = await comboListCursor.writePath([
+            new LinkedArrayListConcat(evenListCursor!.slotPtr.slot),
+          ]);
+        }
+
+        // append to the new list
+        await cursor.writePath([
+          new HashMapGet(new HashMapGetValue(comboKey)),
+          new LinkedArrayListAppend(),
+          new WriteData(new Uint(3n)),
+        ]);
+
+        // read the new value from the list
+        expect(
+          (await cursor.readPath([new HashMapGet(new HashMapGetValue(comboKey)), new LinkedArrayListGet(-1n)]))!.slotPtr
+            .slot.value
+        ).toBe(3n);
+
+        // append more to the new list
+        for (let i = 0; i < 500; i++) {
+          await cursor.writePath([
+            new HashMapGet(new HashMapGetValue(comboKey)),
+            new LinkedArrayListAppend(),
+            new WriteData(new Uint(1n)),
+          ]);
+        }
+      }),
+    ]);
+  }
+
+  // append items to linked_array_list without setting their value
+  {
+    await core.setLength(0n);
+    const db = await Database.create(core, hasher);
+    const rootCursor = await db.rootCursor();
+
+    // appending without setting any value should work
+    for (let i = 0; i < 8; i++) {
+      await rootCursor.writePath([
+        new ArrayListInit(),
+        new ArrayListAppend(),
+        new WriteData(await rootCursor.readPathSlot([new ArrayListGet(-1n)])),
+        new LinkedArrayListInit(),
+        new LinkedArrayListAppend(),
+      ]);
+    }
+
+    // explicitly writing a null slot should also work
+    for (let i = 0; i < 8; i++) {
+      await rootCursor.writePath([
+        new ArrayListInit(),
+        new ArrayListAppend(),
+        new WriteData(await rootCursor.readPathSlot([new ArrayListGet(-1n)])),
+        new LinkedArrayListInit(),
+        new LinkedArrayListAppend(),
+        new WriteData(null),
+      ]);
+    }
+  }
+
+  // insert at beginning of linked_array_list many times
+  {
+    await core.setLength(0n);
+    const db = await Database.create(core, hasher);
+    const rootCursor = await db.rootCursor();
+
+    await rootCursor.writePath([
+      new ArrayListInit(),
+      new ArrayListAppend(),
+      new WriteData(await rootCursor.readPathSlot([new ArrayListGet(-1n)])),
+      new LinkedArrayListInit(),
+      new LinkedArrayListAppend(),
+      new WriteData(new Uint(42n)),
+    ]);
+
+    for (let i = 0; i < 1000; i++) {
+      await rootCursor.writePath([
+        new ArrayListInit(),
+        new ArrayListAppend(),
+        new WriteData(await rootCursor.readPathSlot([new ArrayListGet(-1n)])),
+        new LinkedArrayListInit(),
+        new LinkedArrayListInsert(0n),
+        new WriteData(new Uint(BigInt(i))),
+      ]);
+    }
+  }
+
+  // insert at end of linked_array_list many times
+  {
+    await core.setLength(0n);
+    const db = await Database.create(core, hasher);
+    const rootCursor = await db.rootCursor();
+
+    await rootCursor.writePath([
+      new ArrayListInit(),
+      new ArrayListAppend(),
+      new WriteData(await rootCursor.readPathSlot([new ArrayListGet(-1n)])),
+      new LinkedArrayListInit(),
+      new LinkedArrayListAppend(),
+      new WriteData(new Uint(42n)),
+    ]);
+
+    for (let i = 0; i < 1000; i++) {
+      await rootCursor.writePath([
+        new ArrayListInit(),
+        new ArrayListAppend(),
+        new WriteData(await rootCursor.readPathSlot([new ArrayListGet(-1n)])),
+        new LinkedArrayListInit(),
+        new LinkedArrayListInsert(BigInt(i)),
+        new WriteData(new Uint(BigInt(i))),
+      ]);
+    }
+  }
 }
 
 // Helper function to compare Uint8Arrays
@@ -1620,215 +2187,6 @@ function arraysEqual(a: Uint8Array, b: Uint8Array): boolean {
   return true;
 }
 
-describe('Key Conflicts / Hash Collision Tests', () => {
-  test('key conflicts with in-memory storage', async () => {
-    const ram = new RandomAccessMemory();
-    const core = new CoreMemory(ram);
-    const hasher = new Hasher('SHA-1');
-    await testKeyConflicts(core, hasher);
-  });
-
-  test('key conflicts with file storage', async () => {
-    const tmpDir = await mkdtemp(join(tmpdir(), 'xitdb-'));
-    const filePath = join(tmpDir, 'test.db');
-    try {
-      const core = await CoreFile.create(filePath);
-      const hasher = new Hasher('SHA-1');
-      await testKeyConflicts(core, hasher);
-    } finally {
-      await rm(tmpDir, { recursive: true });
-    }
-  });
-});
-
-async function testKeyConflicts(core: Core, hasher: Hasher): Promise<void> {
-  await core.setLength(0n);
-  const db = await Database.create(core, hasher);
-  const rootCursor = await db.rootCursor();
-
-  const fooKey = await db.hasher.digest(new TextEncoder().encode('foo'));
-
-  // write foo -> bar
-  await rootCursor.writePath([
-    new ArrayListInit(),
-    new ArrayListAppend(),
-    new WriteData(await rootCursor.readPathSlot([new ArrayListGet(-1n)])),
-    new HashMapInit(false, false),
-    new HashMapGet(new HashMapGetValue(fooKey)),
-    new WriteData(new Bytes('bar')),
-  ]);
-
-  // read foo
-  {
-    const barCursor = await rootCursor.readPath([
-      new ArrayListGet(-1n),
-      new HashMapGet(new HashMapGetValue(fooKey)),
-    ]);
-    const barValue = await barCursor!.readBytes(MAX_READ_BYTES);
-    expect(new TextDecoder().decode(barValue)).toBe('bar');
-  }
-
-  // write key that conflicts with foo the first two bytes
-  const smallConflictKey = await db.hasher.digest(new TextEncoder().encode('small conflict'));
-  smallConflictKey[smallConflictKey.length - 1] = fooKey[fooKey.length - 1];
-  smallConflictKey[smallConflictKey.length - 2] = fooKey[fooKey.length - 2];
-  await rootCursor.writePath([
-    new ArrayListInit(),
-    new ArrayListAppend(),
-    new WriteData(await rootCursor.readPathSlot([new ArrayListGet(-1n)])),
-    new HashMapInit(false, false),
-    new HashMapGet(new HashMapGetValue(smallConflictKey)),
-    new WriteData(new Bytes('small')),
-  ]);
-
-  // write key that conflicts with foo the first four bytes
-  const conflictKey = await db.hasher.digest(new TextEncoder().encode('conflict'));
-  conflictKey[conflictKey.length - 1] = fooKey[fooKey.length - 1];
-  conflictKey[conflictKey.length - 2] = fooKey[fooKey.length - 2];
-  conflictKey[conflictKey.length - 3] = fooKey[fooKey.length - 3];
-  conflictKey[conflictKey.length - 4] = fooKey[fooKey.length - 4];
-  await rootCursor.writePath([
-    new ArrayListInit(),
-    new ArrayListAppend(),
-    new WriteData(await rootCursor.readPathSlot([new ArrayListGet(-1n)])),
-    new HashMapInit(false, false),
-    new HashMapGet(new HashMapGetValue(conflictKey)),
-    new WriteData(new Bytes('hello')),
-  ]);
-
-  // read conflicting key
-  const helloCursor = await rootCursor.readPath([
-    new ArrayListGet(-1n),
-    new HashMapGet(new HashMapGetValue(conflictKey)),
-  ]);
-  const helloValue = await helloCursor!.readBytes(MAX_READ_BYTES);
-  expect(new TextDecoder().decode(helloValue)).toBe('hello');
-
-  // we can still read foo
-  const barCursor2 = await rootCursor.readPath([
-    new ArrayListGet(-1n),
-    new HashMapGet(new HashMapGetValue(fooKey)),
-  ]);
-  const barValue2 = await barCursor2!.readBytes(MAX_READ_BYTES);
-  expect(new TextDecoder().decode(barValue2)).toBe('bar');
-
-  // overwrite conflicting key
-  await rootCursor.writePath([
-    new ArrayListInit(),
-    new ArrayListAppend(),
-    new WriteData(await rootCursor.readPathSlot([new ArrayListGet(-1n)])),
-    new HashMapInit(false, false),
-    new HashMapGet(new HashMapGetValue(conflictKey)),
-    new WriteData(new Bytes('goodbye')),
-  ]);
-  const goodbyeCursor = await rootCursor.readPath([
-    new ArrayListGet(-1n),
-    new HashMapGet(new HashMapGetValue(conflictKey)),
-  ]);
-  const goodbyeValue = await goodbyeCursor!.readBytes(MAX_READ_BYTES);
-  expect(new TextDecoder().decode(goodbyeValue)).toBe('goodbye');
-
-  // we can still read the old conflicting key
-  const helloCursor2 = await rootCursor.readPath([
-    new ArrayListGet(-2n),
-    new HashMapGet(new HashMapGetValue(conflictKey)),
-  ]);
-  const helloValue2 = await helloCursor2!.readBytes(MAX_READ_BYTES);
-  expect(new TextDecoder().decode(helloValue2)).toBe('hello');
-
-  // remove the conflicting keys
-  {
-    // foo's slot is an INDEX slot due to the conflict
-    {
-      const mapCursor = await rootCursor.readPath([new ArrayListGet(-1n)]);
-      expect(mapCursor!.slot().tag).toBe(Tag.HASH_MAP);
-
-      const i = Number(BigInt.asUintN(64, bytesToBigInt(fooKey)) & MASK);
-      const slotPos = mapCursor!.slot().value + BigInt(Slot.LENGTH * i);
-      await core.seek(slotPos);
-      const reader = core.reader();
-      const slotBytes = new Uint8Array(Slot.LENGTH);
-      await reader.readFully(slotBytes);
-      const slot = Slot.fromBytes(slotBytes);
-
-      expect(slot.tag).toBe(Tag.INDEX);
-    }
-
-    // remove the small conflict key
-    await rootCursor.writePath([
-      new ArrayListInit(),
-      new ArrayListAppend(),
-      new WriteData(await rootCursor.readPathSlot([new ArrayListGet(-1n)])),
-      new HashMapInit(false, false),
-      new HashMapRemove(smallConflictKey),
-    ]);
-
-    // the conflict key still exists in history
-    expect(
-      await rootCursor.readPath([new ArrayListGet(-2n), new HashMapGet(new HashMapGetValue(smallConflictKey))])
-    ).not.toBeNull();
-
-    // the conflict key doesn't exist in the latest moment
-    expect(
-      await rootCursor.readPath([new ArrayListGet(-1n), new HashMapGet(new HashMapGetValue(smallConflictKey))])
-    ).toBeNull();
-
-    // the other conflict key still exists
-    expect(
-      await rootCursor.readPath([new ArrayListGet(-1n), new HashMapGet(new HashMapGetValue(conflictKey))])
-    ).not.toBeNull();
-
-    // foo's slot is still an INDEX slot due to the other conflicting key
-    {
-      const mapCursor = await rootCursor.readPath([new ArrayListGet(-1n)]);
-      expect(mapCursor!.slot().tag).toBe(Tag.HASH_MAP);
-
-      const i = Number(BigInt.asUintN(64, bytesToBigInt(fooKey)) & MASK);
-      const slotPos = mapCursor!.slot().value + BigInt(Slot.LENGTH * i);
-      await core.seek(slotPos);
-      const reader = core.reader();
-      const slotBytes = new Uint8Array(Slot.LENGTH);
-      await reader.readFully(slotBytes);
-      const slot = Slot.fromBytes(slotBytes);
-
-      expect(slot.tag).toBe(Tag.INDEX);
-    }
-
-    // remove the conflict key
-    await rootCursor.writePath([
-      new ArrayListInit(),
-      new ArrayListAppend(),
-      new WriteData(await rootCursor.readPathSlot([new ArrayListGet(-1n)])),
-      new HashMapInit(false, false),
-      new HashMapRemove(conflictKey),
-    ]);
-
-    // the conflict keys don't exist in the latest moment
-    expect(
-      await rootCursor.readPath([new ArrayListGet(-1n), new HashMapGet(new HashMapGetValue(smallConflictKey))])
-    ).toBeNull();
-    expect(
-      await rootCursor.readPath([new ArrayListGet(-1n), new HashMapGet(new HashMapGetValue(conflictKey))])
-    ).toBeNull();
-
-    // foo's slot is now a KV_PAIR slot, because the branch was shortened
-    {
-      const mapCursor = await rootCursor.readPath([new ArrayListGet(-1n)]);
-      expect(mapCursor!.slot().tag).toBe(Tag.HASH_MAP);
-
-      const i = Number(BigInt.asUintN(64, bytesToBigInt(fooKey)) & MASK);
-      const slotPos = mapCursor!.slot().value + BigInt(Slot.LENGTH * i);
-      await core.seek(slotPos);
-      const reader = core.reader();
-      const slotBytes = new Uint8Array(Slot.LENGTH);
-      await reader.readFully(slotBytes);
-      const slot = Slot.fromBytes(slotBytes);
-
-      expect(slot.tag).toBe(Tag.KV_PAIR);
-    }
-  }
-}
-
 // Helper function to convert bytes to BigInt
 function bytesToBigInt(bytes: Uint8Array): bigint {
   let result = 0n;
@@ -1837,262 +2195,6 @@ function bytesToBigInt(bytes: Uint8Array): bigint {
   }
   return result;
 }
-
-describe('Top-Level ArrayList Overflow Tests', () => {
-  test('top-level array list overflow with in-memory storage', async () => {
-    const ram = new RandomAccessMemory();
-    const core = new CoreMemory(ram);
-    const hasher = new Hasher('SHA-1');
-    await testTopLevelArrayListOverflow(core, hasher);
-  });
-
-  test('top-level array list overflow with file storage', async () => {
-    const tmpDir = await mkdtemp(join(tmpdir(), 'xitdb-'));
-    const filePath = join(tmpDir, 'test.db');
-    try {
-      const core = await CoreFile.create(filePath);
-      const hasher = new Hasher('SHA-1');
-      await testTopLevelArrayListOverflow(core, hasher);
-    } finally {
-      await rm(tmpDir, { recursive: true });
-    }
-  });
-});
-
-async function testTopLevelArrayListOverflow(core: Core, hasher: Hasher): Promise<void> {
-  await core.setLength(0n);
-  const db = await Database.create(core, hasher);
-  const rootCursor = await db.rootCursor();
-
-  const watKey = await db.hasher.digest(new TextEncoder().encode('wat'));
-
-  // append to top-level array_list many times, filling up the array_list until a root overflow occurs
-  for (let i = 0; i < SLOT_COUNT + 1; i++) {
-    const value = `wat${i}`;
-    await rootCursor.writePath([
-      new ArrayListInit(),
-      new ArrayListAppend(),
-      new WriteData(await rootCursor.readPathSlot([new ArrayListGet(-1n)])),
-      new HashMapInit(false, false),
-      new HashMapGet(new HashMapGetValue(watKey)),
-      new WriteData(new Bytes(value)),
-    ]);
-  }
-
-  // verify all values
-  for (let i = 0; i < SLOT_COUNT + 1; i++) {
-    const value = `wat${i}`;
-    const cursor = await rootCursor.readPath([
-      new ArrayListGet(BigInt(i)),
-      new HashMapGet(new HashMapGetValue(watKey)),
-    ]);
-    const value2 = new TextDecoder().decode(await cursor!.readBytes(MAX_READ_BYTES));
-    expect(value).toBe(value2);
-  }
-
-  // add more slots to cause a new index block to be created.
-  // during that transaction, return an error so the transaction is cancelled,
-  // causing truncation to happen. this test ensures that the new index block
-  // is NOT truncated.
-  for (let i = SLOT_COUNT + 1; i < SLOT_COUNT * 2 + 1; i++) {
-    const value = `wat${i}`;
-    const index = i;
-
-    try {
-      await rootCursor.writePath([
-        new ArrayListInit(),
-        new ArrayListAppend(),
-        new WriteData(await rootCursor.readPathSlot([new ArrayListGet(-1n)])),
-        new HashMapInit(false, false),
-        new HashMapGet(new HashMapGetValue(watKey)),
-        new WriteData(new Bytes(value)),
-        new Context(async () => {
-          if (index === 32) {
-            throw new Error('intentional error');
-          }
-        }),
-      ]);
-    } catch (e) {
-      // expected error
-    }
-  }
-
-  // try another append to make sure we still can.
-  // if truncation destroyed the index block, this would fail.
-  await rootCursor.writePath([
-    new ArrayListInit(),
-    new ArrayListAppend(),
-    new WriteData(await rootCursor.readPathSlot([new ArrayListGet(-1n)])),
-    new HashMapInit(false, false),
-    new HashMapGet(new HashMapGetValue(watKey)),
-    new WriteData(new Bytes('wat32')),
-  ]);
-
-  // slice so it contains exactly SLOT_COUNT, so we have the old root again
-  await rootCursor.writePath([new ArrayListInit(), new ArrayListSlice(BigInt(SLOT_COUNT))]);
-
-  // we can iterate over the remaining slots
-  for (let i = 0; i < SLOT_COUNT; i++) {
-    const value = `wat${i}`;
-    const cursor = await rootCursor.readPath([
-      new ArrayListGet(BigInt(i)),
-      new HashMapGet(new HashMapGetValue(watKey)),
-    ]);
-    const value2 = new TextDecoder().decode(await cursor!.readBytes(MAX_READ_BYTES));
-    expect(value).toBe(value2);
-  }
-
-  // but we can't get the value that we sliced out of the array list
-  expect(await rootCursor.readPath([new ArrayListGet(BigInt(SLOT_COUNT + 1))])).toBeNull();
-}
-
-describe('Inner ArrayList Overflow Tests', () => {
-  test('inner array list overflow with in-memory storage', async () => {
-    const ram = new RandomAccessMemory();
-    const core = new CoreMemory(ram);
-    const hasher = new Hasher('SHA-1');
-    await testInnerArrayListOverflow(core, hasher);
-  });
-
-  test('inner array list overflow with file storage', async () => {
-    const tmpDir = await mkdtemp(join(tmpdir(), 'xitdb-'));
-    const filePath = join(tmpDir, 'test.db');
-    try {
-      const core = await CoreFile.create(filePath);
-      const hasher = new Hasher('SHA-1');
-      await testInnerArrayListOverflow(core, hasher);
-    } finally {
-      await rm(tmpDir, { recursive: true });
-    }
-  });
-});
-
-async function testInnerArrayListOverflow(core: Core, hasher: Hasher): Promise<void> {
-  await core.setLength(0n);
-  const db = await Database.create(core, hasher);
-  const rootCursor = await db.rootCursor();
-
-  // append to inner array_list many times, filling up the array_list until a root overflow occurs
-  for (let i = 0; i < SLOT_COUNT + 1; i++) {
-    const value = `wat${i}`;
-    await rootCursor.writePath([
-      new ArrayListInit(),
-      new ArrayListAppend(),
-      new WriteData(await rootCursor.readPathSlot([new ArrayListGet(-1n)])),
-      new ArrayListInit(),
-      new ArrayListAppend(),
-      new WriteData(new Bytes(value)),
-    ]);
-  }
-
-  // verify all values
-  for (let i = 0; i < SLOT_COUNT + 1; i++) {
-    const value = `wat${i}`;
-    const cursor = await rootCursor.readPath([new ArrayListGet(-1n), new ArrayListGet(BigInt(i))]);
-    const value2 = new TextDecoder().decode(await cursor!.readBytes(MAX_READ_BYTES));
-    expect(value).toBe(value2);
-  }
-
-  // slice the inner array list so it contains exactly SLOT_COUNT, so we have the old root again
-  await rootCursor.writePath([
-    new ArrayListInit(),
-    new ArrayListGet(-1n),
-    new ArrayListInit(),
-    new ArrayListSlice(BigInt(SLOT_COUNT)),
-  ]);
-
-  // we can iterate over the remaining slots
-  for (let i = 0; i < SLOT_COUNT; i++) {
-    const value = `wat${i}`;
-    const cursor = await rootCursor.readPath([new ArrayListGet(-1n), new ArrayListGet(BigInt(i))]);
-    const value2 = new TextDecoder().decode(await cursor!.readBytes(MAX_READ_BYTES));
-    expect(value).toBe(value2);
-  }
-
-  // but we can't get the value that we sliced out of the array list
-  expect(await rootCursor.readPath([new ArrayListGet(-1n), new ArrayListGet(BigInt(SLOT_COUNT + 1))])).toBeNull();
-
-  // overwrite the last value with hello
-  await rootCursor.writePath([
-    new ArrayListInit(),
-    new ArrayListAppend(),
-    new WriteData(await rootCursor.readPathSlot([new ArrayListGet(-1n)])),
-    new ArrayListInit(),
-    new ArrayListGet(-1n),
-    new WriteData(new Bytes('hello')),
-  ]);
-
-  // read last value
-  {
-    const cursor = await rootCursor.readPath([new ArrayListGet(-1n), new ArrayListGet(-1n)]);
-    const value = new TextDecoder().decode(await cursor!.readBytes(MAX_READ_BYTES));
-    expect(value).toBe('hello');
-  }
-
-  // overwrite the last value with goodbye
-  await rootCursor.writePath([
-    new ArrayListInit(),
-    new ArrayListAppend(),
-    new WriteData(await rootCursor.readPathSlot([new ArrayListGet(-1n)])),
-    new ArrayListInit(),
-    new ArrayListGet(-1n),
-    new WriteData(new Bytes('goodbye')),
-  ]);
-
-  // read last value
-  {
-    const cursor = await rootCursor.readPath([new ArrayListGet(-1n), new ArrayListGet(-1n)]);
-    const value = new TextDecoder().decode(await cursor!.readBytes(MAX_READ_BYTES));
-    expect(value).toBe('goodbye');
-  }
-
-  // previous last value is still hello
-  {
-    const cursor = await rootCursor.readPath([new ArrayListGet(-2n), new ArrayListGet(-1n)]);
-    const value = new TextDecoder().decode(await cursor!.readBytes(MAX_READ_BYTES));
-    expect(value).toBe('hello');
-  }
-}
-
-describe('LinkedArrayList Operations Tests', () => {
-  test('linked array list slice with in-memory storage', async () => {
-    const ram = new RandomAccessMemory();
-    const core = new CoreMemory(ram);
-    const hasher = new Hasher('SHA-1');
-
-    await testSlice(core, hasher, SLOT_COUNT * 5 + 1, 10n, 5n);
-    await testSlice(core, hasher, SLOT_COUNT * 5 + 1, 0n, BigInt(SLOT_COUNT * 2));
-    await testSlice(core, hasher, SLOT_COUNT * 5, BigInt(SLOT_COUNT * 3), BigInt(SLOT_COUNT));
-    await testSlice(core, hasher, SLOT_COUNT * 5, BigInt(SLOT_COUNT * 3), BigInt(SLOT_COUNT * 2));
-    await testSlice(core, hasher, SLOT_COUNT * 2, 10n, BigInt(SLOT_COUNT));
-    await testSlice(core, hasher, 2, 0n, 2n);
-    await testSlice(core, hasher, 2, 1n, 1n);
-    await testSlice(core, hasher, 1, 0n, 0n);
-  });
-
-  test('linked array list concat with in-memory storage', async () => {
-    const ram = new RandomAccessMemory();
-    const core = new CoreMemory(ram);
-    const hasher = new Hasher('SHA-1');
-
-    await testConcat(core, hasher, BigInt(SLOT_COUNT * 5 + 1), BigInt(SLOT_COUNT + 1));
-    await testConcat(core, hasher, BigInt(SLOT_COUNT), BigInt(SLOT_COUNT));
-    await testConcat(core, hasher, 1n, 1n);
-    await testConcat(core, hasher, 0n, 0n);
-  });
-
-  test('linked array list insert and remove with in-memory storage', async () => {
-    const ram = new RandomAccessMemory();
-    const core = new CoreMemory(ram);
-    const hasher = new Hasher('SHA-1');
-
-    await testInsertAndRemove(core, hasher, 1, 0n);
-    await testInsertAndRemove(core, hasher, 10, 0n);
-    await testInsertAndRemove(core, hasher, 10, 5n);
-    await testInsertAndRemove(core, hasher, 10, 9n);
-    await testInsertAndRemove(core, hasher, SLOT_COUNT * 5, BigInt(SLOT_COUNT * 2));
-  });
-});
 
 async function testSlice(
   core: Core,
@@ -2421,335 +2523,4 @@ async function testInsertAndRemove(core: Core, hasher: Hasher, originalSize: num
       ).toBeNull();
     }),
   ]);
-}
-
-describe('LinkedArrayList Edge Cases Tests', () => {
-  test('concat linked array list multiple times', async () => {
-    const ram = new RandomAccessMemory();
-    const core = new CoreMemory(ram);
-    const hasher = new Hasher('SHA-1');
-    await testConcatMultipleTimes(core, hasher);
-  });
-
-  test('append items to linked array list without setting value', async () => {
-    const ram = new RandomAccessMemory();
-    const core = new CoreMemory(ram);
-    const hasher = new Hasher('SHA-1');
-    await testAppendWithoutValue(core, hasher);
-  });
-
-  test('insert at beginning of linked array list many times', async () => {
-    const ram = new RandomAccessMemory();
-    const core = new CoreMemory(ram);
-    const hasher = new Hasher('SHA-1');
-    await testInsertAtBeginningManyTimes(core, hasher);
-  });
-
-  test('insert at end of linked array list many times', async () => {
-    const ram = new RandomAccessMemory();
-    const core = new CoreMemory(ram);
-    const hasher = new Hasher('SHA-1');
-    await testInsertAtEndManyTimes(core, hasher);
-  });
-});
-
-async function testConcatMultipleTimes(core: Core, hasher: Hasher): Promise<void> {
-  await core.setLength(0n);
-  const db = await Database.create(core, hasher);
-  const rootCursor = await db.rootCursor();
-
-  const evenKey = await db.hasher.digest(new TextEncoder().encode('even'));
-  const comboKey = await db.hasher.digest(new TextEncoder().encode('combo'));
-
-  await rootCursor.writePath([
-    new ArrayListInit(),
-    new ArrayListAppend(),
-    new WriteData(await rootCursor.readPathSlot([new ArrayListGet(-1n)])),
-    new HashMapInit(false, false),
-    new Context(async (cursor) => {
-      // create list
-      for (let i = 0; i < SLOT_COUNT + 1; i++) {
-        const n = BigInt(i * 2);
-        await cursor.writePath([
-          new HashMapGet(new HashMapGetValue(evenKey)),
-          new LinkedArrayListInit(),
-          new LinkedArrayListAppend(),
-          new WriteData(new Uint(n)),
-        ]);
-      }
-
-      // get list slot
-      const evenListCursor = await cursor.readPath([new HashMapGet(new HashMapGetValue(evenKey))]);
-      expect(await evenListCursor!.count()).toBe(BigInt(SLOT_COUNT + 1));
-
-      // check all values in the new slice with an iterator
-      {
-        const innerCursor = await cursor.readPath([new HashMapGet(new HashMapGetValue(evenKey))]);
-        const iter = innerCursor!.iterator();
-        await iter.init();
-        let i = 0;
-        while (await iter.hasNext()) {
-          await iter.next();
-          i += 1;
-        }
-        expect(i).toBe(SLOT_COUNT + 1);
-      }
-
-      // concat the list with itself multiple times.
-      // since each list has 17 items, each concat will create a gap, causing a root overflow
-      // before a normal array list would've.
-      let comboListCursor = await cursor.writePath([
-        new HashMapGet(new HashMapGetValue(comboKey)),
-        new WriteData(evenListCursor!.slotPtr.slot),
-        new LinkedArrayListInit(),
-      ]);
-      for (let i = 0; i < 16; i++) {
-        comboListCursor = await comboListCursor.writePath([
-          new LinkedArrayListConcat(evenListCursor!.slotPtr.slot),
-        ]);
-      }
-
-      // append to the new list
-      await cursor.writePath([
-        new HashMapGet(new HashMapGetValue(comboKey)),
-        new LinkedArrayListAppend(),
-        new WriteData(new Uint(3n)),
-      ]);
-
-      // read the new value from the list
-      expect(
-        (await cursor.readPath([new HashMapGet(new HashMapGetValue(comboKey)), new LinkedArrayListGet(-1n)]))!.slotPtr
-          .slot.value
-      ).toBe(3n);
-
-      // append more to the new list
-      for (let i = 0; i < 500; i++) {
-        await cursor.writePath([
-          new HashMapGet(new HashMapGetValue(comboKey)),
-          new LinkedArrayListAppend(),
-          new WriteData(new Uint(1n)),
-        ]);
-      }
-    }),
-  ]);
-}
-
-async function testAppendWithoutValue(core: Core, hasher: Hasher): Promise<void> {
-  await core.setLength(0n);
-  const db = await Database.create(core, hasher);
-  const rootCursor = await db.rootCursor();
-
-  // appending without setting any value should work
-  for (let i = 0; i < 8; i++) {
-    await rootCursor.writePath([
-      new ArrayListInit(),
-      new ArrayListAppend(),
-      new WriteData(await rootCursor.readPathSlot([new ArrayListGet(-1n)])),
-      new LinkedArrayListInit(),
-      new LinkedArrayListAppend(),
-    ]);
-  }
-
-  // explicitly writing a null slot should also work
-  for (let i = 0; i < 8; i++) {
-    await rootCursor.writePath([
-      new ArrayListInit(),
-      new ArrayListAppend(),
-      new WriteData(await rootCursor.readPathSlot([new ArrayListGet(-1n)])),
-      new LinkedArrayListInit(),
-      new LinkedArrayListAppend(),
-      new WriteData(null),
-    ]);
-  }
-}
-
-async function testInsertAtBeginningManyTimes(core: Core, hasher: Hasher): Promise<void> {
-  await core.setLength(0n);
-  const db = await Database.create(core, hasher);
-  const rootCursor = await db.rootCursor();
-
-  await rootCursor.writePath([
-    new ArrayListInit(),
-    new ArrayListAppend(),
-    new WriteData(await rootCursor.readPathSlot([new ArrayListGet(-1n)])),
-    new LinkedArrayListInit(),
-    new LinkedArrayListAppend(),
-    new WriteData(new Uint(42n)),
-  ]);
-
-  for (let i = 0; i < 1000; i++) {
-    await rootCursor.writePath([
-      new ArrayListInit(),
-      new ArrayListAppend(),
-      new WriteData(await rootCursor.readPathSlot([new ArrayListGet(-1n)])),
-      new LinkedArrayListInit(),
-      new LinkedArrayListInsert(0n),
-      new WriteData(new Uint(BigInt(i))),
-    ]);
-  }
-}
-
-async function testInsertAtEndManyTimes(core: Core, hasher: Hasher): Promise<void> {
-  await core.setLength(0n);
-  const db = await Database.create(core, hasher);
-  const rootCursor = await db.rootCursor();
-
-  await rootCursor.writePath([
-    new ArrayListInit(),
-    new ArrayListAppend(),
-    new WriteData(await rootCursor.readPathSlot([new ArrayListGet(-1n)])),
-    new LinkedArrayListInit(),
-    new LinkedArrayListAppend(),
-    new WriteData(new Uint(42n)),
-  ]);
-
-  for (let i = 0; i < 1000; i++) {
-    await rootCursor.writePath([
-      new ArrayListInit(),
-      new ArrayListAppend(),
-      new WriteData(await rootCursor.readPathSlot([new ArrayListGet(-1n)])),
-      new LinkedArrayListInit(),
-      new LinkedArrayListInsert(BigInt(i)),
-      new WriteData(new Uint(BigInt(i))),
-    ]);
-  }
-}
-
-describe('Non-top-level Lists (Nested Structures) Tests', () => {
-  test('nested lists with in-memory storage', async () => {
-    const ram = new RandomAccessMemory();
-    const core = new CoreMemory(ram);
-    const hasher = new Hasher('SHA-1');
-    await testNestedLists(core, hasher);
-  });
-
-  test('nested lists with file storage', async () => {
-    const tmpDir = await mkdtemp(join(tmpdir(), 'xitdb-'));
-    const filePath = join(tmpDir, 'test.db');
-    try {
-      const core = await CoreFile.create(filePath);
-      const hasher = new Hasher('SHA-1');
-      await testNestedLists(core, hasher);
-    } finally {
-      await rm(tmpDir, { recursive: true });
-    }
-  });
-});
-
-async function testNestedLists(core: Core, hasher: Hasher): Promise<void> {
-  await core.setLength(0n);
-  const db = await Database.create(core, hasher);
-  const rootCursor = await db.rootCursor();
-
-  const fruitsKey = await db.hasher.digest(new TextEncoder().encode('fruits'));
-
-  // write apple
-  await rootCursor.writePath([
-    new ArrayListInit(),
-    new ArrayListAppend(),
-    new WriteData(await rootCursor.readPathSlot([new ArrayListGet(-1n)])),
-    new HashMapInit(false, false),
-    new HashMapGet(new HashMapGetValue(fruitsKey)),
-    new ArrayListInit(),
-    new ArrayListAppend(),
-    new WriteData(new Bytes('apple')),
-  ]);
-
-  // read apple
-  const appleCursor = await rootCursor.readPath([
-    new ArrayListGet(-1n),
-    new HashMapGet(new HashMapGetValue(fruitsKey)),
-    new ArrayListGet(-1n),
-  ]);
-  const appleValue = await appleCursor!.readBytes(MAX_READ_BYTES);
-  expect(new TextDecoder().decode(appleValue)).toBe('apple');
-
-  // write banana
-  await rootCursor.writePath([
-    new ArrayListInit(),
-    new ArrayListAppend(),
-    new WriteData(await rootCursor.readPathSlot([new ArrayListGet(-1n)])),
-    new HashMapInit(false, false),
-    new HashMapGet(new HashMapGetValue(fruitsKey)),
-    new ArrayListInit(),
-    new ArrayListAppend(),
-    new WriteData(new Bytes('banana')),
-  ]);
-
-  // read banana
-  const bananaCursor = await rootCursor.readPath([
-    new ArrayListGet(-1n),
-    new HashMapGet(new HashMapGetValue(fruitsKey)),
-    new ArrayListGet(-1n),
-  ]);
-  const bananaValue = await bananaCursor!.readBytes(MAX_READ_BYTES);
-  expect(new TextDecoder().decode(bananaValue)).toBe('banana');
-
-  // can't read banana in older array_list
-  expect(
-    await rootCursor.readPath([
-      new ArrayListGet(-2n),
-      new HashMapGet(new HashMapGetValue(fruitsKey)),
-      new ArrayListGet(1n),
-    ])
-  ).toBeNull();
-
-  // write pear
-  await rootCursor.writePath([
-    new ArrayListInit(),
-    new ArrayListAppend(),
-    new WriteData(await rootCursor.readPathSlot([new ArrayListGet(-1n)])),
-    new HashMapInit(false, false),
-    new HashMapGet(new HashMapGetValue(fruitsKey)),
-    new ArrayListInit(),
-    new ArrayListAppend(),
-    new WriteData(new Bytes('pear')),
-  ]);
-
-  // write grape
-  await rootCursor.writePath([
-    new ArrayListInit(),
-    new ArrayListAppend(),
-    new WriteData(await rootCursor.readPathSlot([new ArrayListGet(-1n)])),
-    new HashMapInit(false, false),
-    new HashMapGet(new HashMapGetValue(fruitsKey)),
-    new ArrayListInit(),
-    new ArrayListAppend(),
-    new WriteData(new Bytes('grape')),
-  ]);
-
-  // read pear
-  const pearCursor = await rootCursor.readPath([
-    new ArrayListGet(-1n),
-    new HashMapGet(new HashMapGetValue(fruitsKey)),
-    new ArrayListGet(-2n),
-  ]);
-  const pearValue = await pearCursor!.readBytes(MAX_READ_BYTES);
-  expect(new TextDecoder().decode(pearValue)).toBe('pear');
-
-  // read grape
-  const grapeCursor = await rootCursor.readPath([
-    new ArrayListGet(-1n),
-    new HashMapGet(new HashMapGetValue(fruitsKey)),
-    new ArrayListGet(-1n),
-  ]);
-  const grapeValue = await grapeCursor!.readBytes(MAX_READ_BYTES);
-  expect(new TextDecoder().decode(grapeValue)).toBe('grape');
-
-  // verify we can still read old values from history
-  // first moment should have apple
-  const oldAppleCursor = await rootCursor.readPath([
-    new ArrayListGet(0n),
-    new HashMapGet(new HashMapGetValue(fruitsKey)),
-    new ArrayListGet(0n),
-  ]);
-  const oldAppleValue = await oldAppleCursor!.readBytes(MAX_READ_BYTES);
-  expect(new TextDecoder().decode(oldAppleValue)).toBe('apple');
-
-  // verify list count in latest moment
-  const fruitsCursor = await rootCursor.readPath([
-    new ArrayListGet(-1n),
-    new HashMapGet(new HashMapGetValue(fruitsKey)),
-  ]);
-  expect(await fruitsCursor!.count()).toBe(4n);
 }
