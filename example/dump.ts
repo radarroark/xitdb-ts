@@ -43,11 +43,18 @@ async function printValue(cursor: ReadCursor, indent: string): Promise<void> {
       const list = new ReadArrayList(cursor);
       const count = await list.count();
       console.log(`${indent}ArrayList[${count}]:`);
-      for (let i = 0n; i < count; i++) {
-        const itemCursor = await list.getCursor(i);
+      if (indent == '') {
+        const itemCursor = await list.getCursor(count - 1n);
         if (itemCursor) {
-          console.log(`${indent}  [${i}]:`);
           await printValue(itemCursor, indent + '    ');
+        }
+      } else {
+        for (let i = 0n; i < count; i++) {
+          const itemCursor = await list.getCursor(i);
+          if (itemCursor) {
+            console.log(`${indent}  [${i}]:`);
+            await printValue(itemCursor, indent + '    ');
+          }
         }
       }
       break;
