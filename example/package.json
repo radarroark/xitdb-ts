@@ -7,6 +7,6 @@
     "dump": "bun run dump.ts"
   },
   "dependencies": {
-    "xitdb": "0.2.0"
+    "xitdb": "0.3.0"
   }
 }
