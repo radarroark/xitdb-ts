@@ -3,7 +3,6 @@ import {
   Database,
   Tag,
   Hasher,
-  RandomAccessMemory,
   CoreMemory,
   CoreFile,
   CoreBufferedFile,
@@ -63,8 +62,7 @@ const MAX_READ_BYTES = 1024n;
 
 describe('Database High Level API', () => {
   test('high level API with in-memory storage', async () => {
-    const ram = new RandomAccessMemory();
-    const core = new CoreMemory(ram);
+    const core = new CoreMemory();
     const hasher = new Hasher('SHA-1');
     await testHighLevelApi(core, hasher, null);
   });
@@ -94,8 +92,7 @@ describe('Database High Level API', () => {
   });
 
   test('not using array list at top level - hash map', async () => {
-    const ram = new RandomAccessMemory();
-    const core = new CoreMemory(ram);
+    const core = new CoreMemory();
     const hasher = new Hasher('SHA-1');
     const db = await Database.create(core, hasher);
 
@@ -117,8 +114,7 @@ describe('Database High Level API', () => {
   });
 
   test('not using array list at top level - linked array list throws', async () => {
-    const ram = new RandomAccessMemory();
-    const core = new CoreMemory(ram);
+    const core = new CoreMemory();
     const hasher = new Hasher('SHA-1');
     const db = await Database.create(core, hasher);
 
@@ -329,8 +325,7 @@ describe('Database High Level API', () => {
   });
 
   test('low level memory operations', async () => {
-    const ram = new RandomAccessMemory();
-    const core = new CoreMemory(ram);
+    const core = new CoreMemory();
     const hasher = new Hasher('SHA-1');
     const db = await Database.create(core, hasher);
 
@@ -352,8 +347,7 @@ describe('Database High Level API', () => {
 
 describe('Database Low Level API', () => {
   test('low level API with in-memory storage', async () => {
-    const ram = new RandomAccessMemory();
-    const core = new CoreMemory(ram);
+    const core = new CoreMemory();
     const hasher = new Hasher('SHA-1');
     await testLowLevelApi(core, hasher);
   });

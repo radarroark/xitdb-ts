@@ -40,8 +40,6 @@ export {
 
 // Core
 export type { Core, DataReader, DataWriter } from './core';
-export { RandomAccessMemory } from './random-access-memory';
-export { RandomAccessBufferedFile } from './random-access-buffered-file';
 export { CoreMemory } from './core-memory';
 export { CoreFile } from './core-file';
 export { CoreBufferedFile } from './core-buffered-file';

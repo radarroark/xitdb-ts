@@ -102,14 +102,7 @@ A `Database` is initialized with an implementation of the `Core` interface, whic
 
 * `CoreBufferedFile` databases, like in the example above, write to a file while using an in-memory buffer to dramatically improve performance. This is highly recommended if you want to create a file-based database.
 * `CoreFile` databases use no buffering when reading and writing data. This is almost never necessary but it's useful as a benchmark comparison with `CoreBufferedFile` databases.
-* `CoreMemory` databases work completely in memory. You can initialize it with a `RandomAccessMemory` instance.
-
-```typescript
-const ram = new RandomAccessMemory();
-const core = new CoreMemory(ram);
-const hasher = new Hasher('SHA-1');
-const db = await Database.create(core, hasher);
-```
+* `CoreMemory` databases work completely in memory.
 
 Usually, you want to use a top-level `ArrayList` like in the example above, because that allows you to store a reference to each copy of the database (which I call a "moment"). This is how it supports transactions, despite not having any rollback journal or write-ahead log. It's an append-only database, so the data you are writing is invisible to any reader until the very last step, when the top-level list's header is updated.
 
