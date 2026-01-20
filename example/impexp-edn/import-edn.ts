@@ -49,7 +49,7 @@ async function writeEdnValue(cursor: WriteCursor, value: EdnValue): Promise<void
       break;
 
     case 'integer':
-      await cursor.write(new Int(value.value));
+      await cursor.write(new Int(Number(value.value)));
       break;
 
     case 'float':

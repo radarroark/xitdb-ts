@@ -33,10 +33,10 @@ export async function cursorToEdnValue(cursor: ReadCursor): Promise<EdnValue> {
     }
 
     case Tag.UINT:
-      return ednInteger(cursor.readUint());
+      return ednInteger(BigInt(cursor.readUint()));
 
     case Tag.INT:
-      return ednInteger(cursor.readInt());
+      return ednInteger(BigInt(cursor.readInt()));
 
     case Tag.FLOAT:
       return ednFloat(cursor.readFloat());
@@ -45,7 +45,7 @@ export async function cursorToEdnValue(cursor: ReadCursor): Promise<EdnValue> {
       const list = new ReadArrayList(cursor);
       const count = await list.count();
       const elements: EdnValue[] = [];
-      for (let i = 0n; i < count; i++) {
+      for (let i = 0; i < count; i++) {
         const itemCursor = await list.getCursor(i);
         if (itemCursor) {
           elements.push(await cursorToEdnValue(itemCursor));

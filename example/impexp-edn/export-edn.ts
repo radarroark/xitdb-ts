@@ -14,12 +14,12 @@ export async function exportEdn(dbPath: string): Promise<void> {
   const history = new ReadArrayList(rootCursor);
   const count = await history.count();
 
-  if (count === 0n) {
+  if (count === 0) {
     console.log('{}');
     return;
   }
 
-  const latest = await history.getCursor(count - 1n);
+  const latest = await history.getCursor(count - 1);
   if (!latest) {
     console.log('{}');
     return;
