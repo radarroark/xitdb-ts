@@ -62,14 +62,14 @@ async function toJsonValue(cursor: ReadCursor, isRoot = false): Promise<unknown>
       const list = new ReadArrayList(cursor);
       const count = await list.count();
       if (isRoot) {
-        const itemCursor = await list.getCursor(count - 1n);
+        const itemCursor = await list.getCursor(count - 1);
         if (itemCursor) {
           return toJsonValue(itemCursor);
         }
         return null;
       }
       const result: unknown[] = [];
-      for (let i = 0n; i < count; i++) {
+      for (let i = 0; i < count; i++) {
         const itemCursor = await list.getCursor(i);
         if (itemCursor) {
           result.push(await toJsonValue(itemCursor));
@@ -300,7 +300,7 @@ async function main() {
   const fileArgs = args.filter(arg => arg !== '--json');
 
   if (fileArgs.length < 1) {
-    console.error('Usage: bun run dump.ts [--json] <database-file>');
+    console.error('Usage: bun run index.ts [--json] <database-file>');
     process.exit(1);
   }
 
