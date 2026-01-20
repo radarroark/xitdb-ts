@@ -9,7 +9,7 @@ export class CoreBufferedFile implements Core {
     this.file = file;
   }
 
-  static async create(filePath: string, bufferSize?: bigint): Promise<CoreBufferedFile> {
+  static async create(filePath: string, bufferSize?: number): Promise<CoreBufferedFile> {
     const file = await RandomAccessBufferedFile.create(filePath, bufferSize);
     return new CoreBufferedFile(file);
   }
@@ -22,19 +22,19 @@ export class CoreBufferedFile implements Core {
     return this.file;
   }
 
-  async length(): Promise<bigint> {
+  async length(): Promise<number> {
     return await this.file.length();
   }
 
-  async seek(pos: bigint): Promise<void> {
+  async seek(pos: number): Promise<void> {
     await this.file.seek(pos);
   }
 
-  position(): bigint {
-    return BigInt(this.file.position());
+  position(): number {
+    return this.file.position();
   }
 
-  async setLength(len: bigint): Promise<void> {
+  async setLength(len: number): Promise<void> {
     await this.file.setLength(len);
   }
 
@@ -51,29 +51,29 @@ export class CoreBufferedFile implements Core {
   }
 }
 
-const DEFAULT_BUFFER_SIZE = BigInt(8 * 1024 * 1024); // 8MB
+const DEFAULT_BUFFER_SIZE = 8 * 1024 * 1024; // 8MB
 
 class RandomAccessBufferedFile implements DataReader, DataWriter {
   public file: CoreFile;
   private memory: CoreMemory;
-  private bufferSize: bigint; // flushes when the memory is >= this size
-  private filePos: bigint;
-  private memoryPos: bigint;
+  private bufferSize: number; // flushes when the memory is >= this size
+  private filePos: number;
+  private memoryPos: number;
 
-  private constructor(file: CoreFile, bufferSize: bigint) {
+  private constructor(file: CoreFile, bufferSize: number) {
     this.file = file;
     this.memory = new CoreMemory();
     this.bufferSize = bufferSize;
-    this.filePos = 0n;
-    this.memoryPos = 0n;
+    this.filePos = 0;
+    this.memoryPos = 0;
   }
 
-  static async create(filePath: string, bufferSize: bigint = DEFAULT_BUFFER_SIZE): Promise<RandomAccessBufferedFile> {
+  static async create(filePath: string, bufferSize: number = DEFAULT_BUFFER_SIZE): Promise<RandomAccessBufferedFile> {
     const file = await CoreFile.create(filePath);
     return new RandomAccessBufferedFile(file, bufferSize);
   }
 
-  async seek(pos: bigint): Promise<void> {
+  async seek(pos: number): Promise<void> {
     // flush if we are going past the end of the in-memory buffer
     if (pos > this.memoryPos + await this.memory.length()) {
       await this.flush();
@@ -82,31 +82,31 @@ class RandomAccessBufferedFile implements DataReader, DataWriter {
     this.filePos = pos;
 
     // if the buffer is empty, set its position to this offset as well
-    if (await this.memory.length() === 0n) {
+    if (await this.memory.length() === 0) {
       this.memoryPos = pos;
     }
   }
 
-  async length(): Promise<bigint> {
-    return BigInt(Math.max(Number(this.memoryPos + await this.memory.length()), Number(await this.file.length())));
+  async length(): Promise<number> {
+    return Math.max(this.memoryPos + await this.memory.length(), await this.file.length());
   }
 
-  position(): bigint {
-    return BigInt(this.filePos);
+  position(): number {
+    return this.filePos;
   }
 
-  async setLength(len: bigint): Promise<void> {
+  async setLength(len: number): Promise<void> {
     await this.flush();
     await this.file.setLength(len);
-    this.filePos = BigInt(Math.min(Number(len), Number(this.filePos)));
+    this.filePos = Math.min(len, this.filePos);
   }
 
   async flush(): Promise<void> {
     if (await this.memory.length() > 0) {
-      await this.file.seek(BigInt(this.memoryPos));
+      await this.file.seek(this.memoryPos);
       await this.file.writer().write(this.memory.memory.toByteArray());
 
-      this.memoryPos = 0n;
+      this.memoryPos = 0;
       this.memory.memory.reset();
     }
   }
@@ -119,7 +119,7 @@ class RandomAccessBufferedFile implements DataReader, DataWriter {
   // DataWriter interface
 
   async write(buffer: Uint8Array): Promise<void> {
-    if (await this.memory.length() + BigInt(buffer.length) > this.bufferSize) {
+    if (await this.memory.length() + buffer.length > this.bufferSize) {
       await this.flush();
     }
 
@@ -128,11 +128,11 @@ class RandomAccessBufferedFile implements DataReader, DataWriter {
       await this.memory.memory.write(buffer);
     } else {
       // Write directly to file
-      await this.file.seek(BigInt(this.filePos));
+      await this.file.seek(this.filePos);
       await this.file.writer().write(buffer);
     }
 
-    this.filePos += BigInt(buffer.length);
+    this.filePos += buffer.length;
   }
 
   async writeByte(v: number): Promise<void> {
@@ -146,10 +146,10 @@ class RandomAccessBufferedFile implements DataReader, DataWriter {
     await this.write(new Uint8Array(buffer));
   }
 
-  async writeLong(v: bigint): Promise<void> {
+  async writeLong(v: number): Promise<void> {
     const buffer = new ArrayBuffer(8);
     const view = new DataView(buffer);
-    view.setBigInt64(0, v, false); // big-endian
+    view.setBigInt64(0, BigInt(v), false);
     await this.write(new Uint8Array(buffer));
   }
 
@@ -160,13 +160,13 @@ class RandomAccessBufferedFile implements DataReader, DataWriter {
 
     // read from the disk -- before the in-memory buffer
     if (this.filePos < this.memoryPos) {
-      const sizeBeforeMem = Math.min(Number(this.memoryPos - this.filePos), buffer.length);
+      const sizeBeforeMem = Math.min(this.memoryPos - this.filePos, buffer.length);
       const tempBuffer = new Uint8Array(sizeBeforeMem);
-      await this.file.seek(BigInt(this.filePos));
+      await this.file.seek(this.filePos);
       await this.file.reader().readFully(tempBuffer);
       buffer.set(tempBuffer, pos);
       pos += sizeBeforeMem;
-      this.filePos += BigInt(sizeBeforeMem);
+      this.filePos += sizeBeforeMem;
     }
 
     if (pos === buffer.length) return;
@@ -174,13 +174,13 @@ class RandomAccessBufferedFile implements DataReader, DataWriter {
     // read from the in-memory buffer
     if (this.filePos >= this.memoryPos && this.filePos < this.memoryPos + await this.memory.length()) {
       const memPos = this.filePos - this.memoryPos;
-      const sizeInMem = Math.min(Number(await this.memory.length() - memPos), buffer.length - pos);
+      const sizeInMem = Math.min(await this.memory.length() - memPos, buffer.length - pos);
       this.memory.seek(memPos);
       const memBuffer = new Uint8Array(sizeInMem);
       await this.memory.memory.readFully(memBuffer);
       buffer.set(memBuffer, pos);
       pos += sizeInMem;
-      this.filePos += BigInt(sizeInMem);
+      this.filePos += sizeInMem;
     }
 
     if (pos === buffer.length) return;
@@ -189,11 +189,11 @@ class RandomAccessBufferedFile implements DataReader, DataWriter {
     if (this.filePos >= this.memoryPos + await this.memory.length()) {
       const sizeAfterMem = buffer.length - pos;
       const tempBuffer = new Uint8Array(sizeAfterMem);
-      await this.file.seek(BigInt(this.filePos));
+      await this.file.seek(this.filePos);
       await this.file.reader().readFully(tempBuffer);
       buffer.set(tempBuffer, pos);
       pos += sizeAfterMem;
-      this.filePos += BigInt(sizeAfterMem);
+      this.filePos += sizeAfterMem;
     }
   }
 
@@ -217,10 +217,10 @@ class RandomAccessBufferedFile implements DataReader, DataWriter {
     return view.getInt32(0, false); // big-endian
   }
 
-  async readLong(): Promise<bigint> {
+  async readLong(): Promise<number> {
     const bytes = new Uint8Array(8);
     await this.readFully(bytes);
     const view = new DataView(bytes.buffer, bytes.byteOffset, bytes.byteLength);
-    return view.getBigInt64(0, false); // big-endian
+    return Number(view.getBigInt64(0, false));
   }
 }

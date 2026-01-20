@@ -8,8 +8,8 @@ export class Slot implements WriteableData {
   readonly tag: Tag;
   readonly full: boolean;
 
-  constructor(value: bigint = 0n, tag: Tag = Tag.NONE, full: boolean = false) {
-    this.value = value;
+  constructor(value: number | bigint = 0n, tag: Tag = Tag.NONE, full: boolean = false) {
+    this.value = typeof value === 'bigint' ? value : BigInt(value);
     this.tag = tag;
     this.full = full;
   }
@@ -32,7 +32,7 @@ export class Slot implements WriteableData {
     let tagInt = this.full ? 0b1000_0000 : 0;
     tagInt = tagInt | this.tag;
     view.setUint8(0, tagInt);
-    view.setBigInt64(1, this.value, false); // big-endian
+    view.setBigInt64(1, this.value, false);
     return new Uint8Array(buffer);
   }
 
@@ -41,7 +41,7 @@ export class Slot implements WriteableData {
     const tagByte = view.getUint8(0);
     const full = (tagByte & 0b1000_0000) !== 0;
     const tag = tagValueOf(tagByte & 0b0111_1111);
-    const value = view.getBigInt64(1, false); // big-endian
+    const value = view.getBigInt64(1, false);
     return new Slot(value, tag, full);
   }
 

@@ -22,7 +22,7 @@ export class ReadCountedHashMap extends ReadHashMap {
     return map;
   }
 
-  async count(): Promise<bigint> {
+  async count(): Promise<number> {
     return this.cursor.count();
   }
 }

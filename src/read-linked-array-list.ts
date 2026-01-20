@@ -23,7 +23,7 @@ export class ReadLinkedArrayList implements Slotted {
     return this.cursor.slot();
   }
 
-  async count(): Promise<bigint> {
+  async count(): Promise<number> {
     return this.cursor.count();
   }
 
@@ -35,11 +35,11 @@ export class ReadLinkedArrayList implements Slotted {
     yield* this.cursor;
   }
 
-  async getCursor(index: bigint): Promise<ReadCursor | null> {
+  async getCursor(index: number): Promise<ReadCursor | null> {
     return this.cursor.readPath([new LinkedArrayListGet(index)]);
   }
 
-  async getSlot(index: bigint): Promise<Slot | null> {
+  async getSlot(index: number): Promise<Slot | null> {
     return this.cursor.readPathSlot([new LinkedArrayListGet(index)]);
   }
 }

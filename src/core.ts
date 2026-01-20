@@ -3,23 +3,23 @@ export interface DataReader {
   readByte(): Promise<number>;
   readShort(): Promise<number>;
   readInt(): Promise<number>;
-  readLong(): Promise<bigint>;
+  readLong(): Promise<number>;
 }
 
 export interface DataWriter {
   write(buffer: Uint8Array): Promise<void>;
   writeByte(v: number): Promise<void>;
   writeShort(v: number): Promise<void>;
-  writeLong(v: bigint): Promise<void>;
+  writeLong(v: number): Promise<void>;
 }
 
 export interface Core {
   reader(): DataReader;
   writer(): DataWriter;
-  length(): Promise<bigint>;
-  seek(pos: bigint): Promise<void>;
-  position(): bigint;
-  setLength(len: bigint): Promise<void>;
+  length(): Promise<number>;
+  seek(pos: number): Promise<void>;
+  position(): number;
+  setLength(len: number): Promise<void>;
   flush(): Promise<void>;
   sync(): Promise<void>;
 }

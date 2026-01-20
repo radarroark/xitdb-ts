@@ -67,9 +67,9 @@ export class WriteCursor extends ReadCursor {
     const writer = this.db.core.writer();
     const ptrPos = await this.db.core.length();
     await this.db.core.seek(ptrPos);
-    await writer.writeLong(0n);
+    await writer.writeLong(0);
     const startPosition = await this.db.core.length();
-    return new Writer(this, 0n, new Slot(ptrPos, Tag.BYTES), startPosition, 0n);
+    return new Writer(this, 0, new Slot(ptrPos, Tag.BYTES), startPosition, 0);
   }
 
   override async *[Symbol.asyncIterator](): AsyncIterator<WriteCursor> {
@@ -90,18 +90,18 @@ export class WriteCursor extends ReadCursor {
 
 export class Writer {
   parent: WriteCursor;
-  size: bigint;
+  size: number;
   slot: Slot;
-  startPosition: bigint;
-  relativePosition: bigint;
+  startPosition: number;
+  relativePosition: number;
   formatTag: Uint8Array | null = null;
 
   constructor(
     parent: WriteCursor,
-    size: bigint,
+    size: number,
     slot: Slot,
-    startPosition: bigint,
-    relativePosition: bigint
+    startPosition: number,
+    relativePosition: number
   ) {
     this.parent = parent;
     this.size = size;
@@ -115,7 +115,7 @@ export class Writer {
     await this.parent.db.core.seek(this.startPosition + this.relativePosition);
     const writer = this.parent.db.core.writer();
     await writer.write(buffer);
-    this.relativePosition += BigInt(buffer.length);
+    this.relativePosition += buffer.length;
     if (this.relativePosition > this.size) {
       this.size = this.relativePosition;
     }
@@ -132,7 +132,7 @@ export class Writer {
       await writer.write(this.formatTag);
     }
 
-    await this.parent.db.core.seek(this.slot.value);
+    await this.parent.db.core.seek(Number(this.slot.value));
     await writer.writeLong(this.size);
 
     if (this.parent.slotPtr.position === null) throw new CursorNotWriteableException();
@@ -143,7 +143,7 @@ export class Writer {
     this.parent.slotPtr = this.parent.slotPtr.withSlot(this.slot);
   }
 
-  seek(position: bigint): void {
+  seek(position: number): void {
     if (position <= this.size) {
       this.relativePosition = position;
     }

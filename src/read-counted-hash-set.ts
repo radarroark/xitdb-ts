@@ -22,7 +22,7 @@ export class ReadCountedHashSet extends ReadHashSet {
     return set;
   }
 
-  async count(): Promise<bigint> {
+  async count(): Promise<number> {
     return this.cursor.count();
   }
 }

@@ -31,14 +31,14 @@ export class WriteLinkedArrayList extends ReadLinkedArrayList {
     yield* this.cursor as WriteCursor;
   }
 
-  async put(index: bigint, data: WriteableData): Promise<void> {
+  async put(index: number, data: WriteableData): Promise<void> {
     await (this.cursor as WriteCursor).writePath([
       new LinkedArrayListGet(index),
       new WriteData(data),
     ]);
   }
 
-  async putCursor(index: bigint): Promise<WriteCursor> {
+  async putCursor(index: number): Promise<WriteCursor> {
     return (this.cursor as WriteCursor).writePath([new LinkedArrayListGet(index)]);
   }
 
@@ -53,7 +53,7 @@ export class WriteLinkedArrayList extends ReadLinkedArrayList {
     return (this.cursor as WriteCursor).writePath([new LinkedArrayListAppend()]);
   }
 
-  async slice(offset: bigint, size: bigint): Promise<void> {
+  async slice(offset: number, size: number): Promise<void> {
     await (this.cursor as WriteCursor).writePath([
       new LinkedArrayListSlice(offset, size),
     ]);
@@ -63,18 +63,18 @@ export class WriteLinkedArrayList extends ReadLinkedArrayList {
     await (this.cursor as WriteCursor).writePath([new LinkedArrayListConcat(list)]);
   }
 
-  async insert(index: bigint, data: WriteableData): Promise<void> {
+  async insert(index: number, data: WriteableData): Promise<void> {
     await (this.cursor as WriteCursor).writePath([
       new LinkedArrayListInsert(index),
       new WriteData(data),
     ]);
   }
 
-  async insertCursor(index: bigint): Promise<WriteCursor> {
+  async insertCursor(index: number): Promise<WriteCursor> {
     return (this.cursor as WriteCursor).writePath([new LinkedArrayListInsert(index)]);
   }
 
-  async remove(index: bigint): Promise<void> {
+  async remove(index: number): Promise<void> {
     await (this.cursor as WriteCursor).writePath([new LinkedArrayListRemove(index)]);
   }
 }

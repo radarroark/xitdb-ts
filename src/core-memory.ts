@@ -15,20 +15,20 @@ export class CoreMemory implements Core {
     return this.memory;
   }
 
-  async length(): Promise<bigint> {
-    return BigInt(this.memory.size());
+  async length(): Promise<number> {
+    return this.memory.size();
   }
 
-  async seek(pos: bigint): Promise<void> {
-    this.memory.seek(Number(pos));
+  async seek(pos: number): Promise<void> {
+    this.memory.seek(pos);
   }
 
-  position(): bigint {
-    return BigInt(this.memory.getPosition());
+  position(): number {
+    return this.memory.getPosition();
   }
 
-  async setLength(len: bigint): Promise<void> {
-    this.memory.setLength(Number(len));
+  async setLength(len: number): Promise<void> {
+    this.memory.setLength(len);
   }
 
   async flush(): Promise<void> {
@@ -133,10 +133,10 @@ class RandomAccessMemory implements DataReader, DataWriter {
     await this.write(new Uint8Array(buffer));
   }
 
-  async writeLong(v: bigint): Promise<void> {
+  async writeLong(v: number): Promise<void> {
     const buffer = new ArrayBuffer(8);
     const view = new DataView(buffer);
-    view.setBigInt64(0, v, false); // big-endian
+    view.setBigInt64(0, BigInt(v), false);
     await this.write(new Uint8Array(buffer));
   }
 
@@ -170,10 +170,10 @@ class RandomAccessMemory implements DataReader, DataWriter {
     return view.getInt32(0, false); // big-endian
   }
 
-  async readLong(): Promise<bigint> {
+  async readLong(): Promise<number> {
     const bytes = new Uint8Array(8);
     await this.readFully(bytes);
     const view = new DataView(bytes.buffer, bytes.byteOffset, bytes.byteLength);
-    return view.getBigInt64(0, false); // big-endian
+    return Number(view.getBigInt64(0, false));
   }
 }

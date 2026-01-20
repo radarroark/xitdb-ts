@@ -1,10 +1,10 @@
 import { Slot } from './slot';
 
 export class SlotPointer {
-  readonly position: bigint | null;
+  readonly position: number | null;
   readonly slot: Slot;
 
-  constructor(position: bigint | null, slot: Slot) {
+  constructor(position: number | null, slot: Slot) {
     this.position = position;
     this.slot = slot;
   }

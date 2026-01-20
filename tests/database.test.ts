@@ -58,7 +58,7 @@ import { tmpdir } from 'os';
 import { join } from 'path';
 import { mkdtemp, rm } from 'fs/promises';
 
-const MAX_READ_BYTES = 1024n;
+const MAX_READ_BYTES = 1024;
 
 describe('Database High Level API', () => {
   test('high level API with in-memory storage', async () => {
@@ -132,7 +132,7 @@ describe('Database High Level API', () => {
 
     // First moment
     {
-      const momentCursor = await history.getCursor(0n);
+      const momentCursor = await history.getCursor(0);
       expect(momentCursor).not.toBeNull();
       const moment = await ReadHashMap.create(momentCursor!);
 
@@ -149,9 +149,9 @@ describe('Database High Level API', () => {
       const fruitsCursor = await moment.getCursorByString('fruits');
       expect(fruitsCursor).not.toBeNull();
       const fruits = new ReadArrayList(fruitsCursor!);
-      expect(await fruits.count()).toBe(3n);
+      expect(await fruits.count()).toBe(3);
 
-      const appleCursor = await fruits.getCursor(0n);
+      const appleCursor = await fruits.getCursor(0);
       expect(appleCursor).not.toBeNull();
       const appleValue = await appleCursor!.readBytes(MAX_READ_BYTES);
       expect(new TextDecoder().decode(appleValue)).toBe('apple');
@@ -159,21 +159,21 @@ describe('Database High Level API', () => {
       const peopleCursor = await moment.getCursorByString('people');
       expect(peopleCursor).not.toBeNull();
       const people = new ReadArrayList(peopleCursor!);
-      expect(await people.count()).toBe(2n);
+      expect(await people.count()).toBe(2);
 
-      const aliceCursor = await people.getCursor(0n);
+      const aliceCursor = await people.getCursor(0);
       expect(aliceCursor).not.toBeNull();
       const alice = await ReadHashMap.create(aliceCursor!);
       const aliceAgeCursor = await alice.getCursorByString('age');
       expect(aliceAgeCursor).not.toBeNull();
-      expect(aliceAgeCursor!.readUint()).toBe(25n);
+      expect(aliceAgeCursor!.readUint()).toBe(25);
 
       const todosCursor = await moment.getCursorByString('todos');
       expect(todosCursor).not.toBeNull();
       const todos = new ReadLinkedArrayList(todosCursor!);
-      expect(await todos.count()).toBe(3n);
+      expect(await todos.count()).toBe(3);
 
-      const todoCursor = await todos.getCursor(0n);
+      const todoCursor = await todos.getCursor(0);
       expect(todoCursor).not.toBeNull();
       const todoValue = await todoCursor!.readBytes(MAX_READ_BYTES);
       expect(new TextDecoder().decode(todoValue)).toBe('Pay the bills');
@@ -199,7 +199,7 @@ describe('Database High Level API', () => {
         const lettersCountedMapCursor = await moment.getCursorByString('letters-counted-map');
         expect(lettersCountedMapCursor).not.toBeNull();
         const lettersCountedMap = await ReadCountedHashMap.create(lettersCountedMapCursor!);
-        expect(await lettersCountedMap.count()).toBe(2n);
+        expect(await lettersCountedMap.count()).toBe(2);
 
         const iter = lettersCountedMap.iterator();
         await iter.init();
@@ -240,7 +240,7 @@ describe('Database High Level API', () => {
         const lettersCountedSetCursor = await moment.getCursorByString('letters-counted-set');
         expect(lettersCountedSetCursor).not.toBeNull();
         const lettersCountedSet = await ReadCountedHashSet.create(lettersCountedSetCursor!);
-        expect(await lettersCountedSet.count()).toBe(2n);
+        expect(await lettersCountedSet.count()).toBe(2);
 
         const iter = lettersCountedSet.iterator();
         await iter.init();
@@ -258,7 +258,7 @@ describe('Database High Level API', () => {
 
     // Second moment
     {
-      const momentCursor = await history.getCursor(1n);
+      const momentCursor = await history.getCursor(1);
       expect(momentCursor).not.toBeNull();
       const moment = await ReadHashMap.create(momentCursor!);
 
@@ -272,14 +272,14 @@ describe('Database High Level API', () => {
       const fruitsCursor = await moment.getCursorByString('fruits');
       expect(fruitsCursor).not.toBeNull();
       const fruits = new ReadArrayList(fruitsCursor!);
-      expect(await fruits.count()).toBe(2n);
+      expect(await fruits.count()).toBe(2);
 
       const fruitsKVCursor = await moment.getKeyValuePairByString('fruits');
       expect(fruitsKVCursor).not.toBeNull();
       expect(fruitsKVCursor!.keyCursor.slotPtr.slot.tag).toBe(Tag.SHORT_BYTES);
       expect(fruitsKVCursor!.valueCursor.slotPtr.slot.tag).toBe(Tag.ARRAY_LIST);
 
-      const lemonCursor = await fruits.getCursor(0n);
+      const lemonCursor = await fruits.getCursor(0);
       expect(lemonCursor).not.toBeNull();
       const lemonValue = await lemonCursor!.readBytes(MAX_READ_BYTES);
       expect(new TextDecoder().decode(lemonValue)).toBe('lemon');
@@ -287,21 +287,21 @@ describe('Database High Level API', () => {
       const peopleCursor = await moment.getCursorByString('people');
       expect(peopleCursor).not.toBeNull();
       const people = new ReadArrayList(peopleCursor!);
-      expect(await people.count()).toBe(2n);
+      expect(await people.count()).toBe(2);
 
-      const aliceCursor = await people.getCursor(0n);
+      const aliceCursor = await people.getCursor(0);
       expect(aliceCursor).not.toBeNull();
       const alice = await ReadHashMap.create(aliceCursor!);
       const aliceAgeCursor = await alice.getCursorByString('age');
       expect(aliceAgeCursor).not.toBeNull();
-      expect(aliceAgeCursor!.readUint()).toBe(26n);
+      expect(aliceAgeCursor!.readUint()).toBe(26);
 
       const todosCursor = await moment.getCursorByString('todos');
       expect(todosCursor).not.toBeNull();
       const todos = new ReadLinkedArrayList(todosCursor!);
-      expect(await todos.count()).toBe(1n);
+      expect(await todos.count()).toBe(1);
 
-      const todoCursor = await todos.getCursor(0n);
+      const todoCursor = await todos.getCursor(0);
       expect(todoCursor).not.toBeNull();
       const todoValue = await todoCursor!.readBytes(MAX_READ_BYTES);
       expect(new TextDecoder().decode(todoValue)).toBe('Wash the car');
@@ -309,7 +309,7 @@ describe('Database High Level API', () => {
       const lettersCountedMapCursor = await moment.getCursorByString('letters-counted-map');
       expect(lettersCountedMapCursor).not.toBeNull();
       const lettersCountedMap = await ReadCountedHashMap.create(lettersCountedMapCursor!);
-      expect(await lettersCountedMap.count()).toBe(1n);
+      expect(await lettersCountedMap.count()).toBe(1);
 
       const lettersSetCursor = await moment.getCursorByString('letters-set');
       expect(lettersSetCursor).not.toBeNull();
@@ -320,7 +320,7 @@ describe('Database High Level API', () => {
       const lettersCountedSetCursor = await moment.getCursorByString('letters-counted-set');
       expect(lettersCountedSetCursor).not.toBeNull();
       const lettersCountedSet = await ReadCountedHashSet.create(lettersCountedSetCursor!);
-      expect(await lettersCountedSet.count()).toBe(1n);
+      expect(await lettersCountedSet.count()).toBe(1);
     }
   });
 
@@ -334,7 +334,7 @@ describe('Database High Level API', () => {
 
     const writer = await textCursor.writer();
     await writer.write(new TextEncoder().encode('goodbye, world!'));
-    writer.seek(9n);
+    writer.seek(9);
     await writer.write(new TextEncoder().encode('cruel world!'));
     await writer.finish();
 
@@ -380,13 +380,13 @@ describe('Database Low Level API', () => {
 // Helper function for high level API tests
 async function testHighLevelApi(core: Core, hasher: Hasher, filePath: string | null): Promise<void> {
   // init the db
-  await core.setLength(0n);
+  await core.setLength(0);
   let db = await Database.create(core, hasher);
 
   // First transaction
   {
     const history = await WriteArrayList.create(await db.rootCursor());
-    await history.appendContext(await history.getSlot(-1n), async (cursor) => {
+    await history.appendContext(await history.getSlot(-1), async (cursor) => {
       const moment = await WriteHashMap.create(cursor);
 
       await moment.putByString('foo', new Bytes('foo'));
@@ -404,29 +404,29 @@ async function testHighLevelApi(core: Core, hasher: Hasher, filePath: string | n
       const aliceCursor = await people.appendCursor();
       const alice = await WriteHashMap.create(aliceCursor);
       await alice.putByString('name', new Bytes('Alice'));
-      await alice.putByString('age', new Uint(25n));
+      await alice.putByString('age', new Uint(25));
 
       const bobCursor = await people.appendCursor();
       const bob = await WriteHashMap.create(bobCursor);
       await bob.putByString('name', new Bytes('Bob'));
-      await bob.putByString('age', new Uint(42n));
+      await bob.putByString('age', new Uint(42));
 
       const todosCursor = await moment.putCursorByString('todos');
       const todos = await WriteLinkedArrayList.create(todosCursor);
       await todos.append(new Bytes('Pay the bills'));
       await todos.append(new Bytes('Get an oil change'));
-      await todos.insert(1n, new Bytes('Wash the car'));
+      await todos.insert(1, new Bytes('Wash the car'));
 
       // make sure insertCursor works as well
-      const todoCursor = await todos.insertCursor(1n);
+      const todoCursor = await todos.insertCursor(1);
       await WriteHashMap.create(todoCursor);
-      await todos.remove(1n);
+      await todos.remove(1);
 
       const lettersCountedMapCursor = await moment.putCursorByString('letters-counted-map');
       const lettersCountedMap = await WriteCountedHashMap.create(lettersCountedMapCursor);
-      await lettersCountedMap.putByString('a', new Uint(1n));
-      await lettersCountedMap.putByString('a', new Uint(2n));
-      await lettersCountedMap.putByString('c', new Uint(2n));
+      await lettersCountedMap.putByString('a', new Uint(1));
+      await lettersCountedMap.putByString('a', new Uint(2));
+      await lettersCountedMap.putByString('c', new Uint(2));
 
       const lettersSetCursor = await moment.putCursorByString('letters-set');
       const lettersSet = await WriteHashSet.create(lettersSetCursor);
@@ -455,7 +455,7 @@ async function testHighLevelApi(core: Core, hasher: Hasher, filePath: string | n
     });
 
     // Verify first transaction
-    const momentCursor = await history.getCursor(-1n);
+    const momentCursor = await history.getCursor(-1);
     const moment = await ReadHashMap.create(momentCursor!);
 
     const fooCursor = await moment.getCursorByString('foo');
@@ -467,26 +467,26 @@ async function testHighLevelApi(core: Core, hasher: Hasher, filePath: string | n
 
     const fruitsCursor = await moment.getCursorByString('fruits');
     const fruits = new ReadArrayList(fruitsCursor!);
-    expect(await fruits.count()).toBe(3n);
+    expect(await fruits.count()).toBe(3);
 
-    const appleCursor = await fruits.getCursor(0n);
+    const appleCursor = await fruits.getCursor(0);
     const appleValue = await appleCursor!.readBytes(MAX_READ_BYTES);
     expect(new TextDecoder().decode(appleValue)).toBe('apple');
 
     const peopleCursor = await moment.getCursorByString('people');
     const people = new ReadArrayList(peopleCursor!);
-    expect(await people.count()).toBe(2n);
+    expect(await people.count()).toBe(2);
 
-    const aliceCursor = await people.getCursor(0n);
+    const aliceCursor = await people.getCursor(0);
     const alice = await ReadHashMap.create(aliceCursor!);
     const aliceAgeCursor = await alice.getCursorByString('age');
-    expect(aliceAgeCursor!.readUint()).toBe(25n);
+    expect(aliceAgeCursor!.readUint()).toBe(25);
 
     const todosCursor = await moment.getCursorByString('todos');
     const todos = new ReadLinkedArrayList(todosCursor!);
-    expect(await todos.count()).toBe(3n);
+    expect(await todos.count()).toBe(3);
 
-    const todoCursor = await todos.getCursor(0n);
+    const todoCursor = await todos.getCursor(0);
     const todoValue = await todoCursor!.readBytes(MAX_READ_BYTES);
     expect(new TextDecoder().decode(todoValue)).toBe('Pay the bills');
 
@@ -532,7 +532,7 @@ async function testHighLevelApi(core: Core, hasher: Hasher, filePath: string | n
     {
       const lettersCountedMapCursor = await moment.getCursorByString('letters-counted-map');
       const lettersCountedMap = await ReadCountedHashMap.create(lettersCountedMapCursor!);
-      expect(await lettersCountedMap.count()).toBe(2n);
+      expect(await lettersCountedMap.count()).toBe(2);
 
       const iter = lettersCountedMap.iterator();
       await iter.init();
@@ -569,7 +569,7 @@ async function testHighLevelApi(core: Core, hasher: Hasher, filePath: string | n
     {
       const lettersCountedSetCursor = await moment.getCursorByString('letters-counted-set');
       const lettersCountedSet = await ReadCountedHashSet.create(lettersCountedSetCursor!);
-      expect(await lettersCountedSet.count()).toBe(2n);
+      expect(await lettersCountedSet.count()).toBe(2);
 
       const iter = lettersCountedSet.iterator();
       await iter.init();
@@ -606,7 +606,7 @@ async function testHighLevelApi(core: Core, hasher: Hasher, filePath: string | n
   // Second transaction - modify data
   {
     const history = await WriteArrayList.create(await db.rootCursor());
-    await history.appendContext(await history.getSlot(-1n), async (cursor) => {
+    await history.appendContext(await history.getSlot(-1), async (cursor) => {
       const moment = await WriteHashMap.create(cursor);
 
       expect(await moment.removeByString('bar')).toBe(true);
@@ -614,20 +614,20 @@ async function testHighLevelApi(core: Core, hasher: Hasher, filePath: string | n
 
       const fruitsCursor = await moment.putCursorByString('fruits');
       const fruits = await WriteArrayList.create(fruitsCursor);
-      await fruits.put(0n, new Bytes('lemon'));
-      await fruits.slice(2n);
+      await fruits.put(0, new Bytes('lemon'));
+      await fruits.slice(2);
 
       const peopleCursor = await moment.putCursorByString('people');
       const people = await WriteArrayList.create(peopleCursor);
-      const aliceCursor = await people.putCursor(0n);
+      const aliceCursor = await people.putCursor(0);
       const alice = await WriteHashMap.create(aliceCursor);
-      await alice.putByString('age', new Uint(26n));
+      await alice.putByString('age', new Uint(26));
 
       const todosCursor = await moment.putCursorByString('todos');
       const todos = await WriteLinkedArrayList.create(todosCursor);
       await todos.concat(todosCursor.slot());
-      await todos.slice(1n, 2n);
-      await todos.remove(1n);
+      await todos.slice(1, 2);
+      await todos.remove(1);
 
       const lettersCountedMapCursor = await moment.putCursorByString('letters-counted-map');
       const lettersCountedMap = await WriteCountedHashMap.create(lettersCountedMapCursor);
@@ -646,7 +646,7 @@ async function testHighLevelApi(core: Core, hasher: Hasher, filePath: string | n
     });
 
     // Verify second transaction
-    const momentCursor = await history.getCursor(-1n);
+    const momentCursor = await history.getCursor(-1);
     const moment = await ReadHashMap.create(momentCursor!);
 
     expect(await moment.getCursorByString('bar')).toBeNull();
@@ -657,36 +657,36 @@ async function testHighLevelApi(core: Core, hasher: Hasher, filePath: string | n
 
     const fruitsCursor = await moment.getCursorByString('fruits');
     const fruits = new ReadArrayList(fruitsCursor!);
-    expect(await fruits.count()).toBe(2n);
+    expect(await fruits.count()).toBe(2);
 
     const fruitsKVCursor = await moment.getKeyValuePairByString('fruits');
     expect(fruitsKVCursor!.keyCursor.slotPtr.slot.tag).toBe(Tag.SHORT_BYTES);
     expect(fruitsKVCursor!.valueCursor.slotPtr.slot.tag).toBe(Tag.ARRAY_LIST);
 
-    const lemonCursor = await fruits.getCursor(0n);
+    const lemonCursor = await fruits.getCursor(0);
     const lemonValue = await lemonCursor!.readBytes(MAX_READ_BYTES);
     expect(new TextDecoder().decode(lemonValue)).toBe('lemon');
 
     const peopleCursor = await moment.getCursorByString('people');
     const people = new ReadArrayList(peopleCursor!);
-    expect(await people.count()).toBe(2n);
+    expect(await people.count()).toBe(2);
 
-    const aliceCursor = await people.getCursor(0n);
+    const aliceCursor = await people.getCursor(0);
     const alice = await ReadHashMap.create(aliceCursor!);
     const aliceAgeCursor = await alice.getCursorByString('age');
-    expect(aliceAgeCursor!.readUint()).toBe(26n);
+    expect(aliceAgeCursor!.readUint()).toBe(26);
 
     const todosCursor = await moment.getCursorByString('todos');
     const todos = new ReadLinkedArrayList(todosCursor!);
-    expect(await todos.count()).toBe(1n);
+    expect(await todos.count()).toBe(1);
 
-    const todoCursor = await todos.getCursor(0n);
+    const todoCursor = await todos.getCursor(0);
     const todoValue = await todoCursor!.readBytes(MAX_READ_BYTES);
     expect(new TextDecoder().decode(todoValue)).toBe('Wash the car');
 
     const lettersCountedMapCursor = await moment.getCursorByString('letters-counted-map');
     const lettersCountedMap = await ReadCountedHashMap.create(lettersCountedMapCursor!);
-    expect(await lettersCountedMap.count()).toBe(1n);
+    expect(await lettersCountedMap.count()).toBe(1);
 
     const lettersSetCursor = await moment.getCursorByString('letters-set');
     const lettersSet = await ReadHashSet.create(lettersSetCursor!);
@@ -695,13 +695,13 @@ async function testHighLevelApi(core: Core, hasher: Hasher, filePath: string | n
 
     const lettersCountedSetCursor = await moment.getCursorByString('letters-counted-set');
     const lettersCountedSet = await ReadCountedHashSet.create(lettersCountedSetCursor!);
-    expect(await lettersCountedSet.count()).toBe(1n);
+    expect(await lettersCountedSet.count()).toBe(1);
   }
 
   // The old data hasn't changed
   {
     const history = await WriteArrayList.create(await db.rootCursor());
-    const momentCursor = await history.getCursor(0n);
+    const momentCursor = await history.getCursor(0);
     const moment = await ReadHashMap.create(momentCursor!);
 
     const fooCursor = await moment.getCursorByString('foo');
@@ -713,26 +713,26 @@ async function testHighLevelApi(core: Core, hasher: Hasher, filePath: string | n
 
     const fruitsCursor = await moment.getCursorByString('fruits');
     const fruits = new ReadArrayList(fruitsCursor!);
-    expect(await fruits.count()).toBe(3n);
+    expect(await fruits.count()).toBe(3);
 
-    const appleCursor = await fruits.getCursor(0n);
+    const appleCursor = await fruits.getCursor(0);
     const appleValue = await appleCursor!.readBytes(MAX_READ_BYTES);
     expect(new TextDecoder().decode(appleValue)).toBe('apple');
 
     const peopleCursor = await moment.getCursorByString('people');
     const people = new ReadArrayList(peopleCursor!);
-    expect(await people.count()).toBe(2n);
+    expect(await people.count()).toBe(2);
 
-    const aliceCursor = await people.getCursor(0n);
+    const aliceCursor = await people.getCursor(0);
     const alice = await ReadHashMap.create(aliceCursor!);
     const aliceAgeCursor = await alice.getCursorByString('age');
-    expect(aliceAgeCursor!.readUint()).toBe(25n);
+    expect(aliceAgeCursor!.readUint()).toBe(25);
 
     const todosCursor = await moment.getCursorByString('todos');
     const todos = new ReadLinkedArrayList(todosCursor!);
-    expect(await todos.count()).toBe(3n);
+    expect(await todos.count()).toBe(3);
 
-    const todoCursor = await todos.getCursor(0n);
+    const todoCursor = await todos.getCursor(0);
     const todoValue = await todoCursor!.readBytes(MAX_READ_BYTES);
     expect(new TextDecoder().decode(todoValue)).toBe('Pay the bills');
   }
@@ -740,9 +740,9 @@ async function testHighLevelApi(core: Core, hasher: Hasher, filePath: string | n
   // Remove the last transaction with slice
   {
     const history = await WriteArrayList.create(await db.rootCursor());
-    await history.slice(1n);
+    await history.slice(1);
 
-    const momentCursor = await history.getCursor(-1n);
+    const momentCursor = await history.getCursor(-1);
     const moment = await ReadHashMap.create(momentCursor!);
 
     const fooCursor = await moment.getCursorByString('foo');
@@ -754,26 +754,26 @@ async function testHighLevelApi(core: Core, hasher: Hasher, filePath: string | n
 
     const fruitsCursor = await moment.getCursorByString('fruits');
     const fruits = new ReadArrayList(fruitsCursor!);
-    expect(await fruits.count()).toBe(3n);
+    expect(await fruits.count()).toBe(3);
 
-    const appleCursor = await fruits.getCursor(0n);
+    const appleCursor = await fruits.getCursor(0);
     const appleValue = await appleCursor!.readBytes(MAX_READ_BYTES);
     expect(new TextDecoder().decode(appleValue)).toBe('apple');
 
     const peopleCursor = await moment.getCursorByString('people');
     const people = new ReadArrayList(peopleCursor!);
-    expect(await people.count()).toBe(2n);
+    expect(await people.count()).toBe(2);
 
-    const aliceCursor = await people.getCursor(0n);
+    const aliceCursor = await people.getCursor(0);
     const alice = await ReadHashMap.create(aliceCursor!);
     const aliceAgeCursor = await alice.getCursorByString('age');
-    expect(aliceAgeCursor!.readUint()).toBe(25n);
+    expect(aliceAgeCursor!.readUint()).toBe(25);
 
     const todosCursor = await moment.getCursorByString('todos');
     const todos = new ReadLinkedArrayList(todosCursor!);
-    expect(await todos.count()).toBe(3n);
+    expect(await todos.count()).toBe(3);
 
-    const todoCursor = await todos.getCursor(0n);
+    const todoCursor = await todos.getCursor(0);
     const todoValue = await todoCursor!.readBytes(MAX_READ_BYTES);
     expect(new TextDecoder().decode(todoValue)).toBe('Pay the bills');
   }
@@ -795,7 +795,7 @@ async function testHighLevelApi(core: Core, hasher: Hasher, filePath: string | n
   // Cloning
   {
     const history = await WriteArrayList.create(await db.rootCursor());
-    await history.appendContext(await history.getSlot(-1n), async (cursor) => {
+    await history.appendContext(await history.getSlot(-1), async (cursor) => {
       const moment = await WriteHashMap.create(cursor);
 
       const fruitsCursor = await moment.getCursorByString('fruits');
@@ -811,26 +811,26 @@ async function testHighLevelApi(core: Core, hasher: Hasher, filePath: string | n
       await food.append(new Bytes('fish'));
     });
 
-    const momentCursor = await history.getCursor(-1n);
+    const momentCursor = await history.getCursor(-1);
     const moment = await ReadHashMap.create(momentCursor!);
 
     // the food list includes the fruits
     const foodCursor = await moment.getCursorByString('food');
     const food = new ReadArrayList(foodCursor!);
-    expect(await food.count()).toBe(6n);
+    expect(await food.count()).toBe(6);
 
     // ...but the fruits list hasn't been changed
     const fruitsCursor = await moment.getCursorByString('fruits');
     const fruits = new ReadArrayList(fruitsCursor!);
-    expect(await fruits.count()).toBe(3n);
+    expect(await fruits.count()).toBe(3);
   }
 
   // Accidental mutation when cloning inside a transaction
   {
     const history = await WriteArrayList.create(await db.rootCursor());
-    const historyIndex = (await history.count()) - 1n;
+    const historyIndex = (await history.count()) - 1;
 
-    await history.appendContext(await history.getSlot(-1n), async (cursor) => {
+    await history.appendContext(await history.getSlot(-1), async (cursor) => {
       const moment = await WriteHashMap.create(cursor);
 
       const bigCitiesCursor = await moment.putCursorByString('big-cities');
@@ -847,18 +847,18 @@ async function testHighLevelApi(core: Core, hasher: Hasher, filePath: string | n
       await cities.append(new Bytes('Louisville, KY'));
     });
 
-    const momentCursor = await history.getCursor(-1n);
+    const momentCursor = await history.getCursor(-1);
     const moment = await ReadHashMap.create(momentCursor!);
 
     // the cities list contains all four
     const citiesCursor = await moment.getCursorByString('cities');
     const cities = new ReadArrayList(citiesCursor!);
-    expect(await cities.count()).toBe(4n);
+    expect(await cities.count()).toBe(4);
 
     // ..but so does big-cities! we did not intend to mutate this
     const bigCitiesCursor = await moment.getCursorByString('big-cities');
     const bigCities = new ReadArrayList(bigCitiesCursor!);
-    expect(await bigCities.count()).toBe(4n);
+    expect(await bigCities.count()).toBe(4);
 
     // revert that change
     await history.append((await history.getSlot(historyIndex))!);
@@ -867,7 +867,7 @@ async function testHighLevelApi(core: Core, hasher: Hasher, filePath: string | n
   // Preventing accidental mutation with freezing
   {
     const history = await WriteArrayList.create(await db.rootCursor());
-    await history.appendContext(await history.getSlot(-1n), async (cursor) => {
+    await history.appendContext(await history.getSlot(-1), async (cursor) => {
       const moment = await WriteHashMap.create(cursor);
 
       const bigCitiesCursor = await moment.putCursorByString('big-cities');
@@ -887,18 +887,18 @@ async function testHighLevelApi(core: Core, hasher: Hasher, filePath: string | n
       await cities.append(new Bytes('Louisville, KY'));
     });
 
-    const momentCursor = await history.getCursor(-1n);
+    const momentCursor = await history.getCursor(-1);
     const moment = await ReadHashMap.create(momentCursor!);
 
     // the cities list contains all four
     const citiesCursor = await moment.getCursorByString('cities');
     const cities = new ReadArrayList(citiesCursor!);
-    expect(await cities.count()).toBe(4n);
+    expect(await cities.count()).toBe(4);
 
     // and big-cities only contains the original two
     const bigCitiesCursor = await moment.getCursorByString('big-cities');
     const bigCities = new ReadArrayList(bigCitiesCursor!);
-    expect(await bigCities.count()).toBe(2n);
+    expect(await bigCities.count()).toBe(2);
   }
 }
 
@@ -907,22 +907,22 @@ async function testLowLevelApi(core: Core, hasher: Hasher): Promise<void> {
   // open and re-open database
   {
     // make empty database
-    await core.setLength(0n);
+    await core.setLength(0);
     await Database.create(core, hasher);
 
     // re-open without error
     let db = await Database.create(core, hasher);
     const writer = db.core.writer();
-    await db.core.seek(0n);
+    await db.core.seek(0);
     await writer.writeByte('g'.charCodeAt(0));
 
     // re-open with error
     await expect(Database.create(core, hasher)).rejects.toThrow(InvalidDatabaseException);
 
     // modify the version
-    await db.core.seek(0n);
+    await db.core.seek(0);
     await writer.writeByte('x'.charCodeAt(0));
-    await db.core.seek(4n);
+    await db.core.seek(4);
     await writer.writeShort(VERSION + 1);
 
     // re-open with error
@@ -935,7 +935,7 @@ async function testLowLevelApi(core: Core, hasher: Hasher): Promise<void> {
     const hasherWithHashId = new Hasher('SHA-1', hashId);
 
     // make empty database
-    await core.setLength(0n);
+    await core.setLength(0);
     const db = await Database.create(core, hasherWithHashId);
 
     // verify hash id was stored
@@ -945,7 +945,7 @@ async function testLowLevelApi(core: Core, hasher: Hasher): Promise<void> {
 
   // array_list of hash_maps
   {
-    await core.setLength(0n);
+    await core.setLength(0);
     const db = await Database.create(core, hasher);
     const rootCursor = await db.rootCursor();
 
@@ -954,7 +954,7 @@ async function testLowLevelApi(core: Core, hasher: Hasher): Promise<void> {
     await rootCursor.writePath([
       new ArrayListInit(),
       new ArrayListAppend(),
-      new WriteData(await rootCursor.readPathSlot([new ArrayListGet(-1n)])),
+      new WriteData(await rootCursor.readPathSlot([new ArrayListGet(-1)])),
       new HashMapInit(false, false),
       new HashMapGet(new HashMapGetValue(fooKey)),
       new Context(async (cursor) => {
@@ -968,10 +968,10 @@ async function testLowLevelApi(core: Core, hasher: Hasher): Promise<void> {
     // read foo
     {
       const barCursor = await rootCursor.readPath([
-        new ArrayListGet(-1n),
+        new ArrayListGet(-1),
         new HashMapGet(new HashMapGetValue(fooKey)),
       ]);
-      expect(await barCursor!.count()).toBe(3n);
+      expect(await barCursor!.count()).toBe(3);
       const barValue = await barCursor!.readBytes(MAX_READ_BYTES);
       expect(new TextDecoder().decode(barValue)).toBe('bar');
     }
@@ -980,7 +980,7 @@ async function testLowLevelApi(core: Core, hasher: Hasher): Promise<void> {
     await rootCursor.writePath([
       new ArrayListInit(),
       new ArrayListAppend(),
-      new WriteData(await rootCursor.readPathSlot([new ArrayListGet(-1n)])),
+      new WriteData(await rootCursor.readPathSlot([new ArrayListGet(-1)])),
       new HashMapInit(false, false),
       new HashMapGet(new HashMapGetValue(fooKey)),
       new Context(async (cursor) => {
@@ -995,14 +995,14 @@ async function testLowLevelApi(core: Core, hasher: Hasher): Promise<void> {
         const barBytes = new Uint8Array(10);
         const barSize = await barReader.read(barBytes);
         expect(new TextDecoder().decode(barBytes.slice(0, barSize))).toBe('bar');
-        barReader.seek(0n);
+        barReader.seek(0);
         expect(await barReader.read(barBytes)).toBe(3);
         expect(new TextDecoder().decode(barBytes.slice(0, 3))).toBe('bar');
 
         // read one char at a time
         {
           const ch = new Uint8Array(1);
-          barReader.seek(0n);
+          barReader.seek(0);
 
           await barReader.readFully(ch);
           expect(new TextDecoder().decode(ch)).toBe('b');
@@ -1015,10 +1015,10 @@ async function testLowLevelApi(core: Core, hasher: Hasher): Promise<void> {
 
           await expect(barReader.readFully(ch)).rejects.toThrow(EndOfStreamException);
 
-          barReader.seek(1n);
+          barReader.seek(1);
           expect(String.fromCharCode(await barReader.readByte())).toBe('a');
 
-          barReader.seek(0n);
+          barReader.seek(0);
           expect(String.fromCharCode(await barReader.readByte())).toBe('b');
         }
       }),
@@ -1028,7 +1028,7 @@ async function testLowLevelApi(core: Core, hasher: Hasher): Promise<void> {
     await rootCursor.writePath([
       new ArrayListInit(),
       new ArrayListAppend(),
-      new WriteData(await rootCursor.readPathSlot([new ArrayListGet(-1n)])),
+      new WriteData(await rootCursor.readPathSlot([new ArrayListGet(-1)])),
       new HashMapInit(false, false),
       new HashMapGet(new HashMapGetValue(fooKey)),
       new Context(async (cursor) => {
@@ -1038,11 +1038,11 @@ async function testLowLevelApi(core: Core, hasher: Hasher): Promise<void> {
         await writer.write(new TextEncoder().encode('x'));
         await writer.write(new TextEncoder().encode('x'));
         await writer.write(new TextEncoder().encode('x'));
-        writer.seek(0n);
+        writer.seek(0);
         await writer.write(new TextEncoder().encode('b'));
-        writer.seek(2n);
+        writer.seek(2);
         await writer.write(new TextEncoder().encode('z'));
-        writer.seek(1n);
+        writer.seek(1);
         await writer.write(new TextEncoder().encode('a'));
         await writer.finish();
 
@@ -1059,7 +1059,7 @@ async function testLowLevelApi(core: Core, hasher: Hasher): Promise<void> {
         await rootCursor.writePath([
           new ArrayListInit(),
           new ArrayListAppend(),
-          new WriteData(await rootCursor.readPathSlot([new ArrayListGet(-1n)])),
+          new WriteData(await rootCursor.readPathSlot([new ArrayListGet(-1)])),
           new HashMapInit(false, false),
           new HashMapGet(new HashMapGetValue(fooKey)),
           new Context(async (cursor) => {
@@ -1073,7 +1073,7 @@ async function testLowLevelApi(core: Core, hasher: Hasher): Promise<void> {
 
       // read foo
       const valueCursor = await rootCursor.readPath([
-        new ArrayListGet(-1n),
+        new ArrayListGet(-1),
         new HashMapGet(new HashMapGetValue(fooKey)),
       ]);
       const value = await valueCursor!.readBytes();
@@ -1090,7 +1090,7 @@ async function testLowLevelApi(core: Core, hasher: Hasher): Promise<void> {
       const barCursor = await rootCursor.writePath([
         new ArrayListInit(),
         new ArrayListAppend(),
-        new WriteData(await rootCursor.readPathSlot([new ArrayListGet(-1n)])),
+        new WriteData(await rootCursor.readPathSlot([new ArrayListGet(-1)])),
         new HashMapInit(false, false),
         new HashMapGet(new HashMapGetValue(barKey)),
       ]);
@@ -1104,7 +1104,7 @@ async function testLowLevelApi(core: Core, hasher: Hasher): Promise<void> {
         const nextBarCursor = await rootCursor.writePath([
           new ArrayListInit(),
           new ArrayListAppend(),
-          new WriteData(await rootCursor.readPathSlot([new ArrayListGet(-1n)])),
+          new WriteData(await rootCursor.readPathSlot([new ArrayListGet(-1)])),
           new HashMapInit(false, false),
           new HashMapGet(new HashMapGetValue(barKey)),
         ]);
@@ -1117,7 +1117,7 @@ async function testLowLevelApi(core: Core, hasher: Hasher): Promise<void> {
         const nextBarCursor = await rootCursor.writePath([
           new ArrayListInit(),
           new ArrayListAppend(),
-          new WriteData(await rootCursor.readPathSlot([new ArrayListGet(-1n)])),
+          new WriteData(await rootCursor.readPathSlot([new ArrayListGet(-1)])),
           new HashMapInit(false, false),
           new HashMapGet(new HashMapGetValue(barKey)),
         ]);
@@ -1129,7 +1129,7 @@ async function testLowLevelApi(core: Core, hasher: Hasher): Promise<void> {
     // read bar
     {
       const readBarCursor = await rootCursor.readPath([
-        new ArrayListGet(-1n),
+        new ArrayListGet(-1),
         new HashMapGet(new HashMapGetValue(barKey)),
       ]);
       const barValue = await readBarCursor!.readBytes(MAX_READ_BYTES);
@@ -1141,7 +1141,7 @@ async function testLowLevelApi(core: Core, hasher: Hasher): Promise<void> {
       const barCursor = await rootCursor.writePath([
         new ArrayListInit(),
         new ArrayListAppend(),
-        new WriteData(await rootCursor.readPathSlot([new ArrayListGet(-1n)])),
+        new WriteData(await rootCursor.readPathSlot([new ArrayListGet(-1)])),
         new HashMapInit(false, false),
         new HashMapGet(new HashMapGetValue(barKey)),
       ]);
@@ -1149,7 +1149,7 @@ async function testLowLevelApi(core: Core, hasher: Hasher): Promise<void> {
 
       // the slot tag is SHORT_BYTES because the byte array is <= 8 bytes long
       expect(barCursor.slot().tag).toBe(Tag.SHORT_BYTES);
-      expect(await barCursor.count()).toBe(8n);
+      expect(await barCursor.count()).toBe(8);
 
       // make sure that SHORT_BYTES can be read with a reader
       const barReader = await barCursor.reader();
@@ -1163,7 +1163,7 @@ async function testLowLevelApi(core: Core, hasher: Hasher): Promise<void> {
       const barCursor = await rootCursor.writePath([
         new ArrayListInit(),
         new ArrayListAppend(),
-        new WriteData(await rootCursor.readPathSlot([new ArrayListGet(-1n)])),
+        new WriteData(await rootCursor.readPathSlot([new ArrayListGet(-1)])),
         new HashMapInit(false, false),
         new HashMapGet(new HashMapGetValue(barKey)),
       ]);
@@ -1171,11 +1171,11 @@ async function testLowLevelApi(core: Core, hasher: Hasher): Promise<void> {
 
       // the slot tag is BYTES because the byte array is > 8 bytes long including the format tag
       expect(barCursor.slot().tag).toBe(Tag.BYTES);
-      expect(await barCursor.count()).toBe(8n);
+      expect(await barCursor.count()).toBe(8);
 
       // read bar
       const readBarCursor = await rootCursor.readPath([
-        new ArrayListGet(-1n),
+        new ArrayListGet(-1),
         new HashMapGet(new HashMapGetValue(barKey)),
       ]);
       const barBytes = await readBarCursor!.readBytesObject(MAX_READ_BYTES);
@@ -1194,7 +1194,7 @@ async function testLowLevelApi(core: Core, hasher: Hasher): Promise<void> {
       const barCursor = await rootCursor.writePath([
         new ArrayListInit(),
         new ArrayListAppend(),
-        new WriteData(await rootCursor.readPathSlot([new ArrayListGet(-1n)])),
+        new WriteData(await rootCursor.readPathSlot([new ArrayListGet(-1)])),
         new HashMapInit(false, false),
         new HashMapGet(new HashMapGetValue(barKey)),
       ]);
@@ -1202,11 +1202,11 @@ async function testLowLevelApi(core: Core, hasher: Hasher): Promise<void> {
 
       // the slot tag is SHORT_BYTES because the byte array is <= 8 bytes long including the format tag
       expect(barCursor.slot().tag).toBe(Tag.SHORT_BYTES);
-      expect(await barCursor.count()).toBe(6n);
+      expect(await barCursor.count()).toBe(6);
 
       // read bar
       const readBarCursor = await rootCursor.readPath([
-        new ArrayListGet(-1n),
+        new ArrayListGet(-1),
         new HashMapGet(new HashMapGetValue(barKey)),
       ]);
       const barBytes = await readBarCursor!.readBytesObject(MAX_READ_BYTES);
@@ -1225,7 +1225,7 @@ async function testLowLevelApi(core: Core, hasher: Hasher): Promise<void> {
       const barCursor = await rootCursor.writePath([
         new ArrayListInit(),
         new ArrayListAppend(),
-        new WriteData(await rootCursor.readPathSlot([new ArrayListGet(-1n)])),
+        new WriteData(await rootCursor.readPathSlot([new ArrayListGet(-1)])),
         new HashMapInit(false, false),
         new HashMapGet(new HashMapGetValue(barKey)),
       ]);
@@ -1233,11 +1233,11 @@ async function testLowLevelApi(core: Core, hasher: Hasher): Promise<void> {
 
       // the slot tag is SHORT_BYTES because the byte array is <= 8 bytes long including the format tag
       expect(barCursor.slot().tag).toBe(Tag.SHORT_BYTES);
-      expect(await barCursor.count()).toBe(5n);
+      expect(await barCursor.count()).toBe(5);
 
       // read bar
       const readBarCursor = await rootCursor.readPath([
-        new ArrayListGet(-1n),
+        new ArrayListGet(-1),
         new HashMapGet(new HashMapGetValue(barKey)),
       ]);
       const barBytes = await readBarCursor!.readBytesObject(MAX_READ_BYTES);
@@ -1254,7 +1254,7 @@ async function testLowLevelApi(core: Core, hasher: Hasher): Promise<void> {
     // read foo into buffer
     {
       const barCursor = await rootCursor.readPath([
-        new ArrayListGet(-1n),
+        new ArrayListGet(-1),
         new HashMapGet(new HashMapGetValue(fooKey)),
       ]);
       const barBufferValue = await barCursor!.readBytes(MAX_READ_BYTES);
@@ -1266,7 +1266,7 @@ async function testLowLevelApi(core: Core, hasher: Hasher): Promise<void> {
       await rootCursor.writePath([
         new ArrayListInit(),
         new ArrayListAppend(),
-        new WriteData(await rootCursor.readPathSlot([new ArrayListGet(-1n)])),
+        new WriteData(await rootCursor.readPathSlot([new ArrayListGet(-1)])),
         new HashMapInit(false, false),
         new HashMapGet(new HashMapGetValue(barKey)),
         new WriteData(new Bytes('bar')),
@@ -1277,13 +1277,13 @@ async function testLowLevelApi(core: Core, hasher: Hasher): Promise<void> {
     await rootCursor.writePath([
       new ArrayListInit(),
       new ArrayListAppend(),
-      new WriteData(await rootCursor.readPathSlot([new ArrayListGet(-1n)])),
+      new WriteData(await rootCursor.readPathSlot([new ArrayListGet(-1)])),
       new HashMapInit(false, false),
       new HashMapGet(new HashMapGetValue(fooKey)),
       new WriteData(barSlot),
     ]);
     const barCursor = await rootCursor.readPath([
-      new ArrayListGet(-1n),
+      new ArrayListGet(-1),
       new HashMapGet(new HashMapGetValue(fooKey)),
     ]);
     const barValue = await barCursor!.readBytes(MAX_READ_BYTES);
@@ -1291,7 +1291,7 @@ async function testLowLevelApi(core: Core, hasher: Hasher): Promise<void> {
 
     // can still read the old value
     const bazCursor = await rootCursor.readPath([
-      new ArrayListGet(-2n),
+      new ArrayListGet(-2),
       new HashMapGet(new HashMapGetValue(fooKey)),
     ]);
     const bazValue = await bazCursor!.readBytes(MAX_READ_BYTES);
@@ -1300,7 +1300,7 @@ async function testLowLevelApi(core: Core, hasher: Hasher): Promise<void> {
     // key not found
     const notFoundKey = await db.hasher.digest(new TextEncoder().encode("this doesn't exist"));
     expect(
-      await rootCursor.readPath([new ArrayListGet(-2n), new HashMapGet(new HashMapGetValue(notFoundKey))])
+      await rootCursor.readPath([new ArrayListGet(-2), new HashMapGet(new HashMapGetValue(notFoundKey))])
     ).toBeNull();
 
     // write key that conflicts with foo the first two bytes
@@ -1310,7 +1310,7 @@ async function testLowLevelApi(core: Core, hasher: Hasher): Promise<void> {
     await rootCursor.writePath([
       new ArrayListInit(),
       new ArrayListAppend(),
-      new WriteData(await rootCursor.readPathSlot([new ArrayListGet(-1n)])),
+      new WriteData(await rootCursor.readPathSlot([new ArrayListGet(-1)])),
       new HashMapInit(false, false),
       new HashMapGet(new HashMapGetValue(smallConflictKey)),
       new WriteData(new Bytes('small')),
@@ -1325,7 +1325,7 @@ async function testLowLevelApi(core: Core, hasher: Hasher): Promise<void> {
     await rootCursor.writePath([
       new ArrayListInit(),
       new ArrayListAppend(),
-      new WriteData(await rootCursor.readPathSlot([new ArrayListGet(-1n)])),
+      new WriteData(await rootCursor.readPathSlot([new ArrayListGet(-1)])),
       new HashMapInit(false, false),
       new HashMapGet(new HashMapGetValue(conflictKey)),
       new WriteData(new Bytes('hello')),
@@ -1333,7 +1333,7 @@ async function testLowLevelApi(core: Core, hasher: Hasher): Promise<void> {
 
     // read conflicting key
     const helloCursor = await rootCursor.readPath([
-      new ArrayListGet(-1n),
+      new ArrayListGet(-1),
       new HashMapGet(new HashMapGetValue(conflictKey)),
     ]);
     const helloValue = await helloCursor!.readBytes(MAX_READ_BYTES);
@@ -1341,7 +1341,7 @@ async function testLowLevelApi(core: Core, hasher: Hasher): Promise<void> {
 
     // we can still read foo
     const barCursor2 = await rootCursor.readPath([
-      new ArrayListGet(-1n),
+      new ArrayListGet(-1),
       new HashMapGet(new HashMapGetValue(fooKey)),
     ]);
     const barValue2 = await barCursor2!.readBytes(MAX_READ_BYTES);
@@ -1351,13 +1351,13 @@ async function testLowLevelApi(core: Core, hasher: Hasher): Promise<void> {
     await rootCursor.writePath([
       new ArrayListInit(),
       new ArrayListAppend(),
-      new WriteData(await rootCursor.readPathSlot([new ArrayListGet(-1n)])),
+      new WriteData(await rootCursor.readPathSlot([new ArrayListGet(-1)])),
       new HashMapInit(false, false),
       new HashMapGet(new HashMapGetValue(conflictKey)),
       new WriteData(new Bytes('goodbye')),
     ]);
     const goodbyeCursor = await rootCursor.readPath([
-      new ArrayListGet(-1n),
+      new ArrayListGet(-1),
       new HashMapGet(new HashMapGetValue(conflictKey)),
     ]);
     const goodbyeValue = await goodbyeCursor!.readBytes(MAX_READ_BYTES);
@@ -1365,7 +1365,7 @@ async function testLowLevelApi(core: Core, hasher: Hasher): Promise<void> {
 
     // we can still read the old conflicting key
     const helloCursor2 = await rootCursor.readPath([
-      new ArrayListGet(-2n),
+      new ArrayListGet(-2),
       new HashMapGet(new HashMapGetValue(conflictKey)),
     ]);
     const helloValue2 = await helloCursor2!.readBytes(MAX_READ_BYTES);
@@ -1375,11 +1375,11 @@ async function testLowLevelApi(core: Core, hasher: Hasher): Promise<void> {
     {
       // foo's slot is an INDEX slot due to the conflict
       {
-        const mapCursor = await rootCursor.readPath([new ArrayListGet(-1n)]);
+        const mapCursor = await rootCursor.readPath([new ArrayListGet(-1)]);
         expect(mapCursor!.slot().tag).toBe(Tag.HASH_MAP);
 
         const i = Number(BigInt.asUintN(64, bytesToBigInt(fooKey)) & MASK);
-        const slotPos = mapCursor!.slot().value + BigInt(Slot.LENGTH * i);
+        const slotPos = Number(mapCursor!.slot().value) + Slot.LENGTH * i;
         await core.seek(slotPos);
         const reader = core.reader();
         const slotBytes = new Uint8Array(Slot.LENGTH);
@@ -1393,33 +1393,33 @@ async function testLowLevelApi(core: Core, hasher: Hasher): Promise<void> {
       await rootCursor.writePath([
         new ArrayListInit(),
         new ArrayListAppend(),
-        new WriteData(await rootCursor.readPathSlot([new ArrayListGet(-1n)])),
+        new WriteData(await rootCursor.readPathSlot([new ArrayListGet(-1)])),
         new HashMapInit(false, false),
         new HashMapRemove(smallConflictKey),
       ]);
 
       // the conflict key still exists in history
       expect(
-        await rootCursor.readPath([new ArrayListGet(-2n), new HashMapGet(new HashMapGetValue(smallConflictKey))])
+        await rootCursor.readPath([new ArrayListGet(-2), new HashMapGet(new HashMapGetValue(smallConflictKey))])
       ).not.toBeNull();
 
       // the conflict key doesn't exist in the latest moment
       expect(
-        await rootCursor.readPath([new ArrayListGet(-1n), new HashMapGet(new HashMapGetValue(smallConflictKey))])
+        await rootCursor.readPath([new ArrayListGet(-1), new HashMapGet(new HashMapGetValue(smallConflictKey))])
       ).toBeNull();
 
       // the other conflict key still exists
       expect(
-        await rootCursor.readPath([new ArrayListGet(-1n), new HashMapGet(new HashMapGetValue(conflictKey))])
+        await rootCursor.readPath([new ArrayListGet(-1), new HashMapGet(new HashMapGetValue(conflictKey))])
       ).not.toBeNull();
 
       // foo's slot is still an INDEX slot due to the other conflicting key
       {
-        const mapCursor = await rootCursor.readPath([new ArrayListGet(-1n)]);
+        const mapCursor = await rootCursor.readPath([new ArrayListGet(-1)]);
         expect(mapCursor!.slot().tag).toBe(Tag.HASH_MAP);
 
         const i = Number(BigInt.asUintN(64, bytesToBigInt(fooKey)) & MASK);
-        const slotPos = mapCursor!.slot().value + BigInt(Slot.LENGTH * i);
+        const slotPos = Number(mapCursor!.slot().value) + Slot.LENGTH * i;
         await core.seek(slotPos);
         const reader = core.reader();
         const slotBytes = new Uint8Array(Slot.LENGTH);
@@ -1433,26 +1433,26 @@ async function testLowLevelApi(core: Core, hasher: Hasher): Promise<void> {
       await rootCursor.writePath([
         new ArrayListInit(),
         new ArrayListAppend(),
-        new WriteData(await rootCursor.readPathSlot([new ArrayListGet(-1n)])),
+        new WriteData(await rootCursor.readPathSlot([new ArrayListGet(-1)])),
         new HashMapInit(false, false),
         new HashMapRemove(conflictKey),
       ]);
 
       // the conflict keys don't exist in the latest moment
       expect(
-        await rootCursor.readPath([new ArrayListGet(-1n), new HashMapGet(new HashMapGetValue(smallConflictKey))])
+        await rootCursor.readPath([new ArrayListGet(-1), new HashMapGet(new HashMapGetValue(smallConflictKey))])
       ).toBeNull();
       expect(
-        await rootCursor.readPath([new ArrayListGet(-1n), new HashMapGet(new HashMapGetValue(conflictKey))])
+        await rootCursor.readPath([new ArrayListGet(-1), new HashMapGet(new HashMapGetValue(conflictKey))])
       ).toBeNull();
 
       // foo's slot is now a KV_PAIR slot, because the branch was shortened
       {
-        const mapCursor = await rootCursor.readPath([new ArrayListGet(-1n)]);
+        const mapCursor = await rootCursor.readPath([new ArrayListGet(-1)]);
         expect(mapCursor!.slot().tag).toBe(Tag.HASH_MAP);
 
         const i = Number(BigInt.asUintN(64, bytesToBigInt(fooKey)) & MASK);
-        const slotPos = mapCursor!.slot().value + BigInt(Slot.LENGTH * i);
+        const slotPos = Number(mapCursor!.slot().value) + Slot.LENGTH * i;
         await core.seek(slotPos);
         const reader = core.reader();
         const slotBytes = new Uint8Array(Slot.LENGTH);
@@ -1469,17 +1469,17 @@ async function testLowLevelApi(core: Core, hasher: Hasher): Promise<void> {
       await rootCursor.writePath([
         new ArrayListInit(),
         new ArrayListAppend(),
-        new WriteData(await rootCursor.readPathSlot([new ArrayListGet(-1n)])),
+        new WriteData(await rootCursor.readPathSlot([new ArrayListGet(-1)])),
         new HashMapInit(false, false),
         new HashMapGet(new HashMapGetValue(fooKey)),
-        new WriteData(new Uint(42n)),
+        new WriteData(new Uint(42)),
       ]);
 
       // read foo
       const uintValue = (
-        await rootCursor.readPath([new ArrayListGet(-1n), new HashMapGet(new HashMapGetValue(fooKey))])
+        await rootCursor.readPath([new ArrayListGet(-1), new HashMapGet(new HashMapGetValue(fooKey))])
       )!.readUint();
-      expect(uintValue).toBe(42n);
+      expect(uintValue).toBe(42);
     }
 
     {
@@ -1487,17 +1487,17 @@ async function testLowLevelApi(core: Core, hasher: Hasher): Promise<void> {
       await rootCursor.writePath([
         new ArrayListInit(),
         new ArrayListAppend(),
-        new WriteData(await rootCursor.readPathSlot([new ArrayListGet(-1n)])),
+        new WriteData(await rootCursor.readPathSlot([new ArrayListGet(-1)])),
         new HashMapInit(false, false),
         new HashMapGet(new HashMapGetValue(fooKey)),
-        new WriteData(new Int(-42n)),
+        new WriteData(new Int(-42)),
       ]);
 
       // read foo
       const intValue = (
-        await rootCursor.readPath([new ArrayListGet(-1n), new HashMapGet(new HashMapGetValue(fooKey))])
+        await rootCursor.readPath([new ArrayListGet(-1), new HashMapGet(new HashMapGetValue(fooKey))])
       )!.readInt();
-      expect(intValue).toBe(-42n);
+      expect(intValue).toBe(-42);
     }
 
     {
@@ -1505,7 +1505,7 @@ async function testLowLevelApi(core: Core, hasher: Hasher): Promise<void> {
       await rootCursor.writePath([
         new ArrayListInit(),
         new ArrayListAppend(),
-        new WriteData(await rootCursor.readPathSlot([new ArrayListGet(-1n)])),
+        new WriteData(await rootCursor.readPathSlot([new ArrayListGet(-1)])),
         new HashMapInit(false, false),
         new HashMapGet(new HashMapGetValue(fooKey)),
         new WriteData(new Float(42.5)),
@@ -1513,7 +1513,7 @@ async function testLowLevelApi(core: Core, hasher: Hasher): Promise<void> {
 
       // read foo
       const floatValue = (
-        await rootCursor.readPath([new ArrayListGet(-1n), new HashMapGet(new HashMapGetValue(fooKey))])
+        await rootCursor.readPath([new ArrayListGet(-1), new HashMapGet(new HashMapGetValue(fooKey))])
       )!.readFloat();
       expect(floatValue).toBe(42.5);
     }
@@ -1522,7 +1522,7 @@ async function testLowLevelApi(core: Core, hasher: Hasher): Promise<void> {
     await rootCursor.writePath([
       new ArrayListInit(),
       new ArrayListAppend(),
-      new WriteData(await rootCursor.readPathSlot([new ArrayListGet(-1n)])),
+      new WriteData(await rootCursor.readPathSlot([new ArrayListGet(-1)])),
       new HashMapInit(false, false),
       new HashMapRemove(fooKey),
     ]);
@@ -1532,7 +1532,7 @@ async function testLowLevelApi(core: Core, hasher: Hasher): Promise<void> {
       rootCursor.writePath([
         new ArrayListInit(),
         new ArrayListAppend(),
-        new WriteData(await rootCursor.readPathSlot([new ArrayListGet(-1n)])),
+        new WriteData(await rootCursor.readPathSlot([new ArrayListGet(-1)])),
         new HashMapInit(false, false),
         new HashMapRemove(await db.hasher.digest(new TextEncoder().encode("doesn't exist"))),
       ])
@@ -1540,7 +1540,7 @@ async function testLowLevelApi(core: Core, hasher: Hasher): Promise<void> {
 
     // make sure foo doesn't exist anymore
     expect(
-      await rootCursor.readPath([new ArrayListGet(-1n), new HashMapGet(new HashMapGetValue(fooKey))])
+      await rootCursor.readPath([new ArrayListGet(-1), new HashMapGet(new HashMapGetValue(fooKey))])
     ).toBeNull();
 
     // non-top-level list
@@ -1551,7 +1551,7 @@ async function testLowLevelApi(core: Core, hasher: Hasher): Promise<void> {
       await rootCursor.writePath([
         new ArrayListInit(),
         new ArrayListAppend(),
-        new WriteData(await rootCursor.readPathSlot([new ArrayListGet(-1n)])),
+        new WriteData(await rootCursor.readPathSlot([new ArrayListGet(-1)])),
         new HashMapInit(false, false),
         new HashMapGet(new HashMapGetValue(fruitsKey)),
         new ArrayListInit(),
@@ -1561,9 +1561,9 @@ async function testLowLevelApi(core: Core, hasher: Hasher): Promise<void> {
 
       // read apple
       const appleCursor = await rootCursor.readPath([
-        new ArrayListGet(-1n),
+        new ArrayListGet(-1),
         new HashMapGet(new HashMapGetValue(fruitsKey)),
-        new ArrayListGet(-1n),
+        new ArrayListGet(-1),
       ]);
       const appleValue = await appleCursor!.readBytes(MAX_READ_BYTES);
       expect(new TextDecoder().decode(appleValue)).toBe('apple');
@@ -1572,7 +1572,7 @@ async function testLowLevelApi(core: Core, hasher: Hasher): Promise<void> {
       await rootCursor.writePath([
         new ArrayListInit(),
         new ArrayListAppend(),
-        new WriteData(await rootCursor.readPathSlot([new ArrayListGet(-1n)])),
+        new WriteData(await rootCursor.readPathSlot([new ArrayListGet(-1)])),
         new HashMapInit(false, false),
         new HashMapGet(new HashMapGetValue(fruitsKey)),
         new ArrayListInit(),
@@ -1582,9 +1582,9 @@ async function testLowLevelApi(core: Core, hasher: Hasher): Promise<void> {
 
       // read banana
       const bananaCursor = await rootCursor.readPath([
-        new ArrayListGet(-1n),
+        new ArrayListGet(-1),
         new HashMapGet(new HashMapGetValue(fruitsKey)),
-        new ArrayListGet(-1n),
+        new ArrayListGet(-1),
       ]);
       const bananaValue = await bananaCursor!.readBytes(MAX_READ_BYTES);
       expect(new TextDecoder().decode(bananaValue)).toBe('banana');
@@ -1592,9 +1592,9 @@ async function testLowLevelApi(core: Core, hasher: Hasher): Promise<void> {
       // can't read banana in older array_list
       expect(
         await rootCursor.readPath([
-          new ArrayListGet(-2n),
+          new ArrayListGet(-2),
           new HashMapGet(new HashMapGetValue(fruitsKey)),
-          new ArrayListGet(1n),
+          new ArrayListGet(1),
         ])
       ).toBeNull();
 
@@ -1602,7 +1602,7 @@ async function testLowLevelApi(core: Core, hasher: Hasher): Promise<void> {
       await rootCursor.writePath([
         new ArrayListInit(),
         new ArrayListAppend(),
-        new WriteData(await rootCursor.readPathSlot([new ArrayListGet(-1n)])),
+        new WriteData(await rootCursor.readPathSlot([new ArrayListGet(-1)])),
         new HashMapInit(false, false),
         new HashMapGet(new HashMapGetValue(fruitsKey)),
         new ArrayListInit(),
@@ -1614,7 +1614,7 @@ async function testLowLevelApi(core: Core, hasher: Hasher): Promise<void> {
       await rootCursor.writePath([
         new ArrayListInit(),
         new ArrayListAppend(),
-        new WriteData(await rootCursor.readPathSlot([new ArrayListGet(-1n)])),
+        new WriteData(await rootCursor.readPathSlot([new ArrayListGet(-1)])),
         new HashMapInit(false, false),
         new HashMapGet(new HashMapGetValue(fruitsKey)),
         new ArrayListInit(),
@@ -1624,18 +1624,18 @@ async function testLowLevelApi(core: Core, hasher: Hasher): Promise<void> {
 
       // read pear
       const pearCursor = await rootCursor.readPath([
-        new ArrayListGet(-1n),
+        new ArrayListGet(-1),
         new HashMapGet(new HashMapGetValue(fruitsKey)),
-        new ArrayListGet(-2n),
+        new ArrayListGet(-2),
       ]);
       const pearValue = await pearCursor!.readBytes(MAX_READ_BYTES);
       expect(new TextDecoder().decode(pearValue)).toBe('pear');
 
       // read grape
       const grapeCursor = await rootCursor.readPath([
-        new ArrayListGet(-1n),
+        new ArrayListGet(-1),
         new HashMapGet(new HashMapGetValue(fruitsKey)),
-        new ArrayListGet(-1n),
+        new ArrayListGet(-1),
       ]);
       const grapeValue = await grapeCursor!.readBytes(MAX_READ_BYTES);
       expect(new TextDecoder().decode(grapeValue)).toBe('grape');
@@ -1644,7 +1644,7 @@ async function testLowLevelApi(core: Core, hasher: Hasher): Promise<void> {
 
   // append to top-level array_list many times, filling up the array_list until a root overflow occurs
   {
-    await core.setLength(0n);
+    await core.setLength(0);
     const db = await Database.create(core, hasher);
     const rootCursor = await db.rootCursor();
 
@@ -1655,7 +1655,7 @@ async function testLowLevelApi(core: Core, hasher: Hasher): Promise<void> {
       await rootCursor.writePath([
         new ArrayListInit(),
         new ArrayListAppend(),
-        new WriteData(await rootCursor.readPathSlot([new ArrayListGet(-1n)])),
+        new WriteData(await rootCursor.readPathSlot([new ArrayListGet(-1)])),
         new HashMapInit(false, false),
         new HashMapGet(new HashMapGetValue(watKey)),
         new WriteData(new Bytes(value)),
@@ -1666,7 +1666,7 @@ async function testLowLevelApi(core: Core, hasher: Hasher): Promise<void> {
     for (let i = 0; i < SLOT_COUNT + 1; i++) {
       const value = `wat${i}`;
       const cursor = await rootCursor.readPath([
-        new ArrayListGet(BigInt(i)),
+        new ArrayListGet(i),
         new HashMapGet(new HashMapGetValue(watKey)),
       ]);
       const value2 = new TextDecoder().decode(await cursor!.readBytes(MAX_READ_BYTES));
@@ -1685,7 +1685,7 @@ async function testLowLevelApi(core: Core, hasher: Hasher): Promise<void> {
         await rootCursor.writePath([
           new ArrayListInit(),
           new ArrayListAppend(),
-          new WriteData(await rootCursor.readPathSlot([new ArrayListGet(-1n)])),
+          new WriteData(await rootCursor.readPathSlot([new ArrayListGet(-1)])),
           new HashMapInit(false, false),
           new HashMapGet(new HashMapGetValue(watKey)),
           new WriteData(new Bytes(value)),
@@ -1705,20 +1705,20 @@ async function testLowLevelApi(core: Core, hasher: Hasher): Promise<void> {
     await rootCursor.writePath([
       new ArrayListInit(),
       new ArrayListAppend(),
-      new WriteData(await rootCursor.readPathSlot([new ArrayListGet(-1n)])),
+      new WriteData(await rootCursor.readPathSlot([new ArrayListGet(-1)])),
       new HashMapInit(false, false),
       new HashMapGet(new HashMapGetValue(watKey)),
       new WriteData(new Bytes('wat32')),
     ]);
 
     // slice so it contains exactly SLOT_COUNT, so we have the old root again
-    await rootCursor.writePath([new ArrayListInit(), new ArrayListSlice(BigInt(SLOT_COUNT))]);
+    await rootCursor.writePath([new ArrayListInit(), new ArrayListSlice(SLOT_COUNT)]);
 
     // we can iterate over the remaining slots
     for (let i = 0; i < SLOT_COUNT; i++) {
       const value = `wat${i}`;
       const cursor = await rootCursor.readPath([
-        new ArrayListGet(BigInt(i)),
+        new ArrayListGet(i),
         new HashMapGet(new HashMapGetValue(watKey)),
       ]);
       const value2 = new TextDecoder().decode(await cursor!.readBytes(MAX_READ_BYTES));
@@ -1726,12 +1726,12 @@ async function testLowLevelApi(core: Core, hasher: Hasher): Promise<void> {
     }
 
     // but we can't get the value that we sliced out of the array list
-    expect(await rootCursor.readPath([new ArrayListGet(BigInt(SLOT_COUNT + 1))])).toBeNull();
+    expect(await rootCursor.readPath([new ArrayListGet(SLOT_COUNT + 1)])).toBeNull();
   }
 
   // append to inner array_list many times, filling up the array_list until a root overflow occurs
   {
-    await core.setLength(0n);
+    await core.setLength(0);
     const db = await Database.create(core, hasher);
     const rootCursor = await db.rootCursor();
 
@@ -1740,7 +1740,7 @@ async function testLowLevelApi(core: Core, hasher: Hasher): Promise<void> {
       await rootCursor.writePath([
         new ArrayListInit(),
         new ArrayListAppend(),
-        new WriteData(await rootCursor.readPathSlot([new ArrayListGet(-1n)])),
+        new WriteData(await rootCursor.readPathSlot([new ArrayListGet(-1)])),
         new ArrayListInit(),
         new ArrayListAppend(),
         new WriteData(new Bytes(value)),
@@ -1750,7 +1750,7 @@ async function testLowLevelApi(core: Core, hasher: Hasher): Promise<void> {
     // verify all values
     for (let i = 0; i < SLOT_COUNT + 1; i++) {
       const value = `wat${i}`;
-      const cursor = await rootCursor.readPath([new ArrayListGet(-1n), new ArrayListGet(BigInt(i))]);
+      const cursor = await rootCursor.readPath([new ArrayListGet(-1), new ArrayListGet(i)]);
       const value2 = new TextDecoder().decode(await cursor!.readBytes(MAX_READ_BYTES));
       expect(value).toBe(value2);
     }
@@ -1758,35 +1758,35 @@ async function testLowLevelApi(core: Core, hasher: Hasher): Promise<void> {
     // slice the inner array list so it contains exactly SLOT_COUNT, so we have the old root again
     await rootCursor.writePath([
       new ArrayListInit(),
-      new ArrayListGet(-1n),
+      new ArrayListGet(-1),
       new ArrayListInit(),
-      new ArrayListSlice(BigInt(SLOT_COUNT)),
+      new ArrayListSlice(SLOT_COUNT),
     ]);
 
     // we can iterate over the remaining slots
     for (let i = 0; i < SLOT_COUNT; i++) {
       const value = `wat${i}`;
-      const cursor = await rootCursor.readPath([new ArrayListGet(-1n), new ArrayListGet(BigInt(i))]);
+      const cursor = await rootCursor.readPath([new ArrayListGet(-1), new ArrayListGet(i)]);
       const value2 = new TextDecoder().decode(await cursor!.readBytes(MAX_READ_BYTES));
       expect(value).toBe(value2);
     }
 
     // but we can't get the value that we sliced out of the array list
-    expect(await rootCursor.readPath([new ArrayListGet(-1n), new ArrayListGet(BigInt(SLOT_COUNT + 1))])).toBeNull();
+    expect(await rootCursor.readPath([new ArrayListGet(-1), new ArrayListGet(SLOT_COUNT + 1)])).toBeNull();
 
     // overwrite the last value with hello
     await rootCursor.writePath([
       new ArrayListInit(),
       new ArrayListAppend(),
-      new WriteData(await rootCursor.readPathSlot([new ArrayListGet(-1n)])),
+      new WriteData(await rootCursor.readPathSlot([new ArrayListGet(-1)])),
       new ArrayListInit(),
-      new ArrayListGet(-1n),
+      new ArrayListGet(-1),
       new WriteData(new Bytes('hello')),
     ]);
 
     // read last value
     {
-      const cursor = await rootCursor.readPath([new ArrayListGet(-1n), new ArrayListGet(-1n)]);
+      const cursor = await rootCursor.readPath([new ArrayListGet(-1), new ArrayListGet(-1)]);
       const value = new TextDecoder().decode(await cursor!.readBytes(MAX_READ_BYTES));
       expect(value).toBe('hello');
     }
@@ -1795,22 +1795,22 @@ async function testLowLevelApi(core: Core, hasher: Hasher): Promise<void> {
     await rootCursor.writePath([
       new ArrayListInit(),
       new ArrayListAppend(),
-      new WriteData(await rootCursor.readPathSlot([new ArrayListGet(-1n)])),
+      new WriteData(await rootCursor.readPathSlot([new ArrayListGet(-1)])),
       new ArrayListInit(),
-      new ArrayListGet(-1n),
+      new ArrayListGet(-1),
       new WriteData(new Bytes('goodbye')),
     ]);
 
     // read last value
     {
-      const cursor = await rootCursor.readPath([new ArrayListGet(-1n), new ArrayListGet(-1n)]);
+      const cursor = await rootCursor.readPath([new ArrayListGet(-1), new ArrayListGet(-1)]);
       const value = new TextDecoder().decode(await cursor!.readBytes(MAX_READ_BYTES));
       expect(value).toBe('goodbye');
     }
 
     // previous last value is still hello
     {
-      const cursor = await rootCursor.readPath([new ArrayListGet(-2n), new ArrayListGet(-1n)]);
+      const cursor = await rootCursor.readPath([new ArrayListGet(-2), new ArrayListGet(-1)]);
       const value = new TextDecoder().decode(await cursor!.readBytes(MAX_READ_BYTES));
       expect(value).toBe('hello');
     }
@@ -1818,7 +1818,7 @@ async function testLowLevelApi(core: Core, hasher: Hasher): Promise<void> {
 
   // iterate over inner array_list
   {
-    await core.setLength(0n);
+    await core.setLength(0);
     const db = await Database.create(core, hasher);
     const rootCursor = await db.rootCursor();
 
@@ -1828,20 +1828,20 @@ async function testLowLevelApi(core: Core, hasher: Hasher): Promise<void> {
       await rootCursor.writePath([
         new ArrayListInit(),
         new ArrayListAppend(),
-        new WriteData(await rootCursor.readPathSlot([new ArrayListGet(-1n)])),
+        new WriteData(await rootCursor.readPathSlot([new ArrayListGet(-1)])),
         new ArrayListInit(),
         new ArrayListAppend(),
         new WriteData(new Bytes(value)),
       ]);
 
-      const cursor = await rootCursor.readPath([new ArrayListGet(-1n), new ArrayListGet(-1n)]);
+      const cursor = await rootCursor.readPath([new ArrayListGet(-1), new ArrayListGet(-1)]);
       const value2 = new TextDecoder().decode(await cursor!.readBytes(MAX_READ_BYTES));
       expect(value).toBe(value2);
     }
 
     // iterate over array_list
     {
-      const innerCursor = await rootCursor.readPath([new ArrayListGet(-1n)]);
+      const innerCursor = await rootCursor.readPath([new ArrayListGet(-1)]);
       const iter = innerCursor!.iterator();
       await iter.init();
       let i = 0;
@@ -1859,12 +1859,12 @@ async function testLowLevelApi(core: Core, hasher: Hasher): Promise<void> {
     {
       await rootCursor.writePath([
         new ArrayListInit(),
-        new ArrayListGet(-1n),
+        new ArrayListGet(-1),
         new ArrayListInit(),
-        new ArrayListGet(0n),
+        new ArrayListGet(0),
         new WriteData(null),
       ]);
-      const innerCursor = await rootCursor.readPath([new ArrayListGet(-1n)]);
+      const innerCursor = await rootCursor.readPath([new ArrayListGet(-1)]);
       const iter = innerCursor!.iterator();
       await iter.init();
       let i = 0;
@@ -1876,13 +1876,13 @@ async function testLowLevelApi(core: Core, hasher: Hasher): Promise<void> {
     }
 
     // get list slot
-    const listCursor = await rootCursor.readPath([new ArrayListGet(-1n)]);
-    expect(await listCursor!.count()).toBe(10n);
+    const listCursor = await rootCursor.readPath([new ArrayListGet(-1)]);
+    expect(await listCursor!.count()).toBe(10);
   }
 
   // iterate over inner hash_map
   {
-    await core.setLength(0n);
+    await core.setLength(0);
     const db = await Database.create(core, hasher);
     const rootCursor = await db.rootCursor();
 
@@ -1893,14 +1893,14 @@ async function testLowLevelApi(core: Core, hasher: Hasher): Promise<void> {
       await rootCursor.writePath([
         new ArrayListInit(),
         new ArrayListAppend(),
-        new WriteData(await rootCursor.readPathSlot([new ArrayListGet(-1n)])),
+        new WriteData(await rootCursor.readPathSlot([new ArrayListGet(-1)])),
         new HashMapInit(false, false),
         new HashMapGet(new HashMapGetValue(watKey)),
         new WriteData(new Bytes(value)),
       ]);
 
       const cursor = await rootCursor.readPath([
-        new ArrayListGet(-1n),
+        new ArrayListGet(-1),
         new HashMapGet(new HashMapGetValue(watKey)),
       ]);
       const value2 = new TextDecoder().decode(await cursor!.readBytes(MAX_READ_BYTES));
@@ -1912,7 +1912,7 @@ async function testLowLevelApi(core: Core, hasher: Hasher): Promise<void> {
     await rootCursor.writePath([
       new ArrayListInit(),
       new ArrayListAppend(),
-      new WriteData(await rootCursor.readPathSlot([new ArrayListGet(-1n)])),
+      new WriteData(await rootCursor.readPathSlot([new ArrayListGet(-1)])),
       new HashMapInit(false, false),
       new HashMapGet(new HashMapGetKey(fooKey)),
       new WriteData(new Bytes('foo')),
@@ -1920,24 +1920,24 @@ async function testLowLevelApi(core: Core, hasher: Hasher): Promise<void> {
     await rootCursor.writePath([
       new ArrayListInit(),
       new ArrayListAppend(),
-      new WriteData(await rootCursor.readPathSlot([new ArrayListGet(-1n)])),
+      new WriteData(await rootCursor.readPathSlot([new ArrayListGet(-1)])),
       new HashMapInit(false, false),
       new HashMapGet(new HashMapGetValue(fooKey)),
-      new WriteData(new Uint(42n)),
+      new WriteData(new Uint(42)),
     ]);
 
     // remove a wat
     await rootCursor.writePath([
       new ArrayListInit(),
       new ArrayListAppend(),
-      new WriteData(await rootCursor.readPathSlot([new ArrayListGet(-1n)])),
+      new WriteData(await rootCursor.readPathSlot([new ArrayListGet(-1)])),
       new HashMapInit(false, false),
       new HashMapRemove(await db.hasher.digest(new TextEncoder().encode('wat0'))),
     ]);
 
     // iterate over hash_map
     {
-      const innerCursor = await rootCursor.readPath([new ArrayListGet(-1n)]);
+      const innerCursor = await rootCursor.readPath([new ArrayListGet(-1)]);
       const iter = innerCursor!.iterator();
       await iter.init();
       let i = 0;
@@ -1963,7 +1963,7 @@ async function testLowLevelApi(core: Core, hasher: Hasher): Promise<void> {
       const innerCursor = await rootCursor.writePath([
         new ArrayListInit(),
         new ArrayListAppend(),
-        new WriteData(await rootCursor.readPathSlot([new ArrayListGet(-1n)])),
+        new WriteData(await rootCursor.readPathSlot([new ArrayListGet(-1)])),
       ]);
       const iter = (innerCursor as WriteCursor).iterator();
       await iter.init();
@@ -1982,32 +1982,32 @@ async function testLowLevelApi(core: Core, hasher: Hasher): Promise<void> {
 
   {
     // slice linked_array_list
-    await testSlice(core, hasher, SLOT_COUNT * 5 + 1, 10n, 5n);
-    await testSlice(core, hasher, SLOT_COUNT * 5 + 1, 0n, BigInt(SLOT_COUNT * 2));
-    await testSlice(core, hasher, SLOT_COUNT * 5, BigInt(SLOT_COUNT * 3), BigInt(SLOT_COUNT));
-    await testSlice(core, hasher, SLOT_COUNT * 5, BigInt(SLOT_COUNT * 3), BigInt(SLOT_COUNT * 2));
-    await testSlice(core, hasher, SLOT_COUNT * 2, 10n, BigInt(SLOT_COUNT));
-    await testSlice(core, hasher, 2, 0n, 2n);
-    await testSlice(core, hasher, 2, 1n, 1n);
-    await testSlice(core, hasher, 1, 0n, 0n);
+    await testSlice(core, hasher, SLOT_COUNT * 5 + 1, 10, 5);
+    await testSlice(core, hasher, SLOT_COUNT * 5 + 1, 0, SLOT_COUNT * 2);
+    await testSlice(core, hasher, SLOT_COUNT * 5, SLOT_COUNT * 3, SLOT_COUNT);
+    await testSlice(core, hasher, SLOT_COUNT * 5, SLOT_COUNT * 3, SLOT_COUNT * 2);
+    await testSlice(core, hasher, SLOT_COUNT * 2, 10, SLOT_COUNT);
+    await testSlice(core, hasher, 2, 0, 2);
+    await testSlice(core, hasher, 2, 1, 1);
+    await testSlice(core, hasher, 1, 0, 0);
 
     // concat linked_array_list
-    await testConcat(core, hasher, BigInt(SLOT_COUNT * 5 + 1), BigInt(SLOT_COUNT + 1));
-    await testConcat(core, hasher, BigInt(SLOT_COUNT), BigInt(SLOT_COUNT));
-    await testConcat(core, hasher, 1n, 1n);
-    await testConcat(core, hasher, 0n, 0n);
+    await testConcat(core, hasher, SLOT_COUNT * 5 + 1, SLOT_COUNT + 1);
+    await testConcat(core, hasher, SLOT_COUNT, SLOT_COUNT);
+    await testConcat(core, hasher, 1, 1);
+    await testConcat(core, hasher, 0, 0);
 
     // insert linked_array_list
-    await testInsertAndRemove(core, hasher, 1, 0n);
-    await testInsertAndRemove(core, hasher, 10, 0n);
-    await testInsertAndRemove(core, hasher, 10, 5n);
-    await testInsertAndRemove(core, hasher, 10, 9n);
-    await testInsertAndRemove(core, hasher, SLOT_COUNT * 5, BigInt(SLOT_COUNT * 2));
+    await testInsertAndRemove(core, hasher, 1, 0);
+    await testInsertAndRemove(core, hasher, 10, 0);
+    await testInsertAndRemove(core, hasher, 10, 5);
+    await testInsertAndRemove(core, hasher, 10, 9);
+    await testInsertAndRemove(core, hasher, SLOT_COUNT * 5, SLOT_COUNT * 2);
   }
 
   // concat linked_array_list multiple times
   {
-    await core.setLength(0n);
+    await core.setLength(0);
     const db = await Database.create(core, hasher);
     const rootCursor = await db.rootCursor();
 
@@ -2017,12 +2017,12 @@ async function testLowLevelApi(core: Core, hasher: Hasher): Promise<void> {
     await rootCursor.writePath([
       new ArrayListInit(),
       new ArrayListAppend(),
-      new WriteData(await rootCursor.readPathSlot([new ArrayListGet(-1n)])),
+      new WriteData(await rootCursor.readPathSlot([new ArrayListGet(-1)])),
       new HashMapInit(false, false),
       new Context(async (cursor) => {
         // create list
         for (let i = 0; i < SLOT_COUNT + 1; i++) {
-          const n = BigInt(i * 2);
+          const n = i * 2;
           await cursor.writePath([
             new HashMapGet(new HashMapGetValue(evenKey)),
             new LinkedArrayListInit(),
@@ -2033,7 +2033,7 @@ async function testLowLevelApi(core: Core, hasher: Hasher): Promise<void> {
 
         // get list slot
         const evenListCursor = await cursor.readPath([new HashMapGet(new HashMapGetValue(evenKey))]);
-        expect(await evenListCursor!.count()).toBe(BigInt(SLOT_COUNT + 1));
+        expect(await evenListCursor!.count()).toBe(SLOT_COUNT + 1);
 
         // check all values in the new slice with an iterator
         {
@@ -2066,21 +2066,20 @@ async function testLowLevelApi(core: Core, hasher: Hasher): Promise<void> {
         await cursor.writePath([
           new HashMapGet(new HashMapGetValue(comboKey)),
           new LinkedArrayListAppend(),
-          new WriteData(new Uint(3n)),
+          new WriteData(new Uint(3)),
         ]);
 
         // read the new value from the list
         expect(
-          (await cursor.readPath([new HashMapGet(new HashMapGetValue(comboKey)), new LinkedArrayListGet(-1n)]))!.slotPtr
-            .slot.value
-        ).toBe(3n);
+          (await cursor.readPath([new HashMapGet(new HashMapGetValue(comboKey)), new LinkedArrayListGet(-1)]))!.readUint()
+        ).toBe(3);
 
         // append more to the new list
         for (let i = 0; i < 500; i++) {
           await cursor.writePath([
             new HashMapGet(new HashMapGetValue(comboKey)),
             new LinkedArrayListAppend(),
-            new WriteData(new Uint(1n)),
+            new WriteData(new Uint(1)),
           ]);
         }
       }),
@@ -2089,7 +2088,7 @@ async function testLowLevelApi(core: Core, hasher: Hasher): Promise<void> {
 
   // append items to linked_array_list without setting their value
   {
-    await core.setLength(0n);
+    await core.setLength(0);
     const db = await Database.create(core, hasher);
     const rootCursor = await db.rootCursor();
 
@@ -2098,7 +2097,7 @@ async function testLowLevelApi(core: Core, hasher: Hasher): Promise<void> {
       await rootCursor.writePath([
         new ArrayListInit(),
         new ArrayListAppend(),
-        new WriteData(await rootCursor.readPathSlot([new ArrayListGet(-1n)])),
+        new WriteData(await rootCursor.readPathSlot([new ArrayListGet(-1)])),
         new LinkedArrayListInit(),
         new LinkedArrayListAppend(),
       ]);
@@ -2109,7 +2108,7 @@ async function testLowLevelApi(core: Core, hasher: Hasher): Promise<void> {
       await rootCursor.writePath([
         new ArrayListInit(),
         new ArrayListAppend(),
-        new WriteData(await rootCursor.readPathSlot([new ArrayListGet(-1n)])),
+        new WriteData(await rootCursor.readPathSlot([new ArrayListGet(-1)])),
         new LinkedArrayListInit(),
         new LinkedArrayListAppend(),
         new WriteData(null),
@@ -2119,54 +2118,54 @@ async function testLowLevelApi(core: Core, hasher: Hasher): Promise<void> {
 
   // insert at beginning of linked_array_list many times
   {
-    await core.setLength(0n);
+    await core.setLength(0);
     const db = await Database.create(core, hasher);
     const rootCursor = await db.rootCursor();
 
     await rootCursor.writePath([
       new ArrayListInit(),
       new ArrayListAppend(),
-      new WriteData(await rootCursor.readPathSlot([new ArrayListGet(-1n)])),
+      new WriteData(await rootCursor.readPathSlot([new ArrayListGet(-1)])),
       new LinkedArrayListInit(),
       new LinkedArrayListAppend(),
-      new WriteData(new Uint(42n)),
+      new WriteData(new Uint(42)),
     ]);
 
     for (let i = 0; i < 1000; i++) {
       await rootCursor.writePath([
         new ArrayListInit(),
         new ArrayListAppend(),
-        new WriteData(await rootCursor.readPathSlot([new ArrayListGet(-1n)])),
+        new WriteData(await rootCursor.readPathSlot([new ArrayListGet(-1)])),
         new LinkedArrayListInit(),
-        new LinkedArrayListInsert(0n),
-        new WriteData(new Uint(BigInt(i))),
+        new LinkedArrayListInsert(0),
+        new WriteData(new Uint(i)),
       ]);
     }
   }
 
   // insert at end of linked_array_list many times
   {
-    await core.setLength(0n);
+    await core.setLength(0);
     const db = await Database.create(core, hasher);
     const rootCursor = await db.rootCursor();
 
     await rootCursor.writePath([
       new ArrayListInit(),
       new ArrayListAppend(),
-      new WriteData(await rootCursor.readPathSlot([new ArrayListGet(-1n)])),
+      new WriteData(await rootCursor.readPathSlot([new ArrayListGet(-1)])),
       new LinkedArrayListInit(),
       new LinkedArrayListAppend(),
-      new WriteData(new Uint(42n)),
+      new WriteData(new Uint(42)),
     ]);
 
     for (let i = 0; i < 1000; i++) {
       await rootCursor.writePath([
         new ArrayListInit(),
         new ArrayListAppend(),
-        new WriteData(await rootCursor.readPathSlot([new ArrayListGet(-1n)])),
+        new WriteData(await rootCursor.readPathSlot([new ArrayListGet(-1)])),
         new LinkedArrayListInit(),
-        new LinkedArrayListInsert(BigInt(i)),
-        new WriteData(new Uint(BigInt(i))),
+        new LinkedArrayListInsert(i),
+        new WriteData(new Uint(i)),
       ]);
     }
   }
@@ -2194,10 +2193,10 @@ async function testSlice(
   core: Core,
   hasher: Hasher,
   originalSize: number,
-  sliceOffset: bigint,
-  sliceSize: bigint
+  sliceOffset: number,
+  sliceSize: number
 ): Promise<void> {
-  await core.setLength(0n);
+  await core.setLength(0);
   const db = await Database.create(core, hasher);
   const rootCursor = await db.rootCursor();
 
@@ -2208,14 +2207,14 @@ async function testSlice(
   await rootCursor.writePath([
     new ArrayListInit(),
     new ArrayListAppend(),
-    new WriteData(await rootCursor.readPathSlot([new ArrayListGet(-1n)])),
+    new WriteData(await rootCursor.readPathSlot([new ArrayListGet(-1)])),
     new HashMapInit(false, false),
     new Context(async (cursor) => {
-      const values: bigint[] = [];
+      const values: number[] = [];
 
       // create list
       for (let i = 0; i < originalSize; i++) {
-        const n = BigInt(i * 2);
+        const n = i * 2;
         values.push(n);
         await cursor.writePath([
           new HashMapGet(new HashMapGetValue(evenKey)),
@@ -2235,11 +2234,11 @@ async function testSlice(
       ]);
 
       // check all the values in the new slice
-      for (let i = 0n; i < sliceSize; i++) {
-        const val = values[Number(sliceOffset + i)];
+      for (let i = 0; i < sliceSize; i++) {
+        const val = values[sliceOffset + i];
         const n = (
           await cursor.readPath([new HashMapGet(new HashMapGetValue(evenSliceKey)), new LinkedArrayListGet(i)])
-        )!.slotPtr.slot.value;
+        )!.readUint();
         expect(val).toBe(n);
       }
 
@@ -2247,11 +2246,11 @@ async function testSlice(
       {
         const iter = evenListSliceCursor.iterator();
         await iter.init();
-        let i = 0n;
+        let i = 0;
         while (await iter.hasNext()) {
           const numCursor = await iter.next();
-          expect(values[Number(sliceOffset + i)]).toBe(numCursor!.readUint());
-          i += 1n;
+          expect(values[sliceOffset + i]).toBe(numCursor!.readUint());
+          i += 1;
         }
         expect(sliceSize).toBe(i);
       }
@@ -2270,13 +2269,13 @@ async function testSlice(
       ]);
 
       // check all values in the combo list
-      const comboValues: bigint[] = [];
-      comboValues.push(...values.slice(Number(sliceOffset), Number(sliceOffset + sliceSize)));
-      comboValues.push(...values.slice(Number(sliceOffset), Number(sliceOffset + sliceSize)));
+      const comboValues: number[] = [];
+      comboValues.push(...values.slice(sliceOffset, sliceOffset + sliceSize));
+      comboValues.push(...values.slice(sliceOffset, sliceOffset + sliceSize));
       for (let i = 0; i < comboValues.length; i++) {
         const n = (
-          await cursor.readPath([new HashMapGet(new HashMapGetValue(comboKey)), new LinkedArrayListGet(BigInt(i))])
-        )!.slotPtr.slot.value;
+          await cursor.readPath([new HashMapGet(new HashMapGetValue(comboKey)), new LinkedArrayListGet(i)])
+        )!.readUint();
         expect(comboValues[i]).toBe(n);
       }
 
@@ -2285,20 +2284,20 @@ async function testSlice(
         new HashMapGet(new HashMapGetValue(evenSliceKey)),
         new LinkedArrayListInit(),
         new LinkedArrayListAppend(),
-        new WriteData(new Uint(3n)),
+        new WriteData(new Uint(3)),
       ]);
 
       // read the new value from the slice
       expect(
-        (await cursor.readPath([new HashMapGet(new HashMapGetValue(evenSliceKey)), new LinkedArrayListGet(-1n)]))!
-          .slotPtr.slot.value
-      ).toBe(3n);
+        (await cursor.readPath([new HashMapGet(new HashMapGetValue(evenSliceKey)), new LinkedArrayListGet(-1)]))!
+          .readUint()
+      ).toBe(3);
     }),
   ]);
 }
 
-async function testConcat(core: Core, hasher: Hasher, listASize: bigint, listBSize: bigint): Promise<void> {
-  await core.setLength(0n);
+async function testConcat(core: Core, hasher: Hasher, listASize: number, listBSize: number): Promise<void> {
+  await core.setLength(0);
   const db = await Database.create(core, hasher);
   const rootCursor = await db.rootCursor();
 
@@ -2306,18 +2305,18 @@ async function testConcat(core: Core, hasher: Hasher, listASize: bigint, listBSi
   const oddKey = await db.hasher.digest(new TextEncoder().encode('odd'));
   const comboKey = await db.hasher.digest(new TextEncoder().encode('combo'));
 
-  const values: bigint[] = [];
+  const values: number[] = [];
 
   await rootCursor.writePath([
     new ArrayListInit(),
     new ArrayListAppend(),
-    new WriteData(await rootCursor.readPathSlot([new ArrayListGet(-1n)])),
+    new WriteData(await rootCursor.readPathSlot([new ArrayListGet(-1)])),
     new HashMapInit(false, false),
     new Context(async (cursor) => {
       // create even list
       await cursor.writePath([new HashMapGet(new HashMapGetValue(evenKey)), new LinkedArrayListInit()]);
-      for (let i = 0n; i < listASize; i++) {
-        const n = i * 2n;
+      for (let i = 0; i < listASize; i++) {
+        const n = i * 2;
         values.push(n);
         await cursor.writePath([
           new HashMapGet(new HashMapGetValue(evenKey)),
@@ -2329,8 +2328,8 @@ async function testConcat(core: Core, hasher: Hasher, listASize: bigint, listBSi
 
       // create odd list
       await cursor.writePath([new HashMapGet(new HashMapGetValue(oddKey)), new LinkedArrayListInit()]);
-      for (let i = 0n; i < listBSize; i++) {
-        const n = i * 2n + 1n;
+      for (let i = 0; i < listBSize; i++) {
+        const n = i * 2 + 1;
         values.push(n);
         await cursor.writePath([
           new HashMapGet(new HashMapGetValue(oddKey)),
@@ -2345,7 +2344,7 @@ async function testConcat(core: Core, hasher: Hasher, listASize: bigint, listBSi
   await rootCursor.writePath([
     new ArrayListInit(),
     new ArrayListAppend(),
-    new WriteData(await rootCursor.readPathSlot([new ArrayListGet(-1n)])),
+    new WriteData(await rootCursor.readPathSlot([new ArrayListGet(-1)])),
     new HashMapInit(false, false),
     new Context(async (cursor) => {
       // get the even list
@@ -2365,8 +2364,8 @@ async function testConcat(core: Core, hasher: Hasher, listASize: bigint, listBSi
       // check all values in the new list
       for (let i = 0; i < values.length; i++) {
         const n = (
-          await cursor.readPath([new HashMapGet(new HashMapGetValue(comboKey)), new LinkedArrayListGet(BigInt(i))])
-        )!.slotPtr.slot.value;
+          await cursor.readPath([new HashMapGet(new HashMapGetValue(comboKey)), new LinkedArrayListGet(i)])
+        )!.readUint();
         expect(values[i]).toBe(n);
       }
 
@@ -2380,40 +2379,40 @@ async function testConcat(core: Core, hasher: Hasher, listASize: bigint, listBSi
           expect(values[i]).toBe(numCursor!.readUint());
           i += 1;
         }
-        expect((await evenListCursor!.count()) + (await oddListCursor!.count())).toBe(BigInt(i));
+        expect((await evenListCursor!.count()) + (await oddListCursor!.count())).toBe(i);
       }
 
       // there are no extra items
       expect(
-        await cursor.readPath([new HashMapGet(new HashMapGetValue(comboKey)), new LinkedArrayListGet(BigInt(values.length))])
+        await cursor.readPath([new HashMapGet(new HashMapGetValue(comboKey)), new LinkedArrayListGet(values.length)])
       ).toBeNull();
     }),
   ]);
 }
 
-async function testInsertAndRemove(core: Core, hasher: Hasher, originalSize: number, insertIndex: bigint): Promise<void> {
-  await core.setLength(0n);
+async function testInsertAndRemove(core: Core, hasher: Hasher, originalSize: number, insertIndex: number): Promise<void> {
+  await core.setLength(0);
   const db = await Database.create(core, hasher);
   const rootCursor = await db.rootCursor();
 
   const evenKey = await db.hasher.digest(new TextEncoder().encode('even'));
   const evenInsertKey = await db.hasher.digest(new TextEncoder().encode('even-insert'));
-  const insertValue = 12345n;
+  const insertValue = 12345;
 
   await rootCursor.writePath([
     new ArrayListInit(),
     new ArrayListAppend(),
-    new WriteData(await rootCursor.readPathSlot([new ArrayListGet(-1n)])),
+    new WriteData(await rootCursor.readPathSlot([new ArrayListGet(-1)])),
     new HashMapInit(false, false),
     new Context(async (cursor) => {
-      const values: bigint[] = [];
+      const values: number[] = [];
 
       // create list
       for (let i = 0; i < originalSize; i++) {
-        if (BigInt(i) === insertIndex) {
+        if (i === insertIndex) {
           values.push(insertValue);
         }
-        const n = BigInt(i * 2);
+        const n = i * 2;
         values.push(n);
         await cursor.writePath([
           new HashMapGet(new HashMapGetValue(evenKey)),
@@ -2439,8 +2438,8 @@ async function testInsertAndRemove(core: Core, hasher: Hasher, originalSize: num
       for (let i = 0; i < values.length; i++) {
         const val = values[i];
         const n = (
-          await cursor.readPath([new HashMapGet(new HashMapGetValue(evenInsertKey)), new LinkedArrayListGet(BigInt(i))])
-        )!.slotPtr.slot.value;
+          await cursor.readPath([new HashMapGet(new HashMapGetValue(evenInsertKey)), new LinkedArrayListGet(i)])
+        )!.readUint();
         expect(val).toBe(n);
       }
 
@@ -2461,7 +2460,7 @@ async function testInsertAndRemove(core: Core, hasher: Hasher, originalSize: num
       expect(
         await cursor.readPath([
           new HashMapGet(new HashMapGetValue(evenInsertKey)),
-          new LinkedArrayListGet(BigInt(values.length)),
+          new LinkedArrayListGet(values.length),
         ])
       ).toBeNull();
     }),
@@ -2470,13 +2469,13 @@ async function testInsertAndRemove(core: Core, hasher: Hasher, originalSize: num
   await rootCursor.writePath([
     new ArrayListInit(),
     new ArrayListAppend(),
-    new WriteData(await rootCursor.readPathSlot([new ArrayListGet(-1n)])),
+    new WriteData(await rootCursor.readPathSlot([new ArrayListGet(-1)])),
     new HashMapInit(false, false),
     new Context(async (cursor) => {
-      const values: bigint[] = [];
+      const values: number[] = [];
 
       for (let i = 0; i < originalSize; i++) {
-        const n = BigInt(i * 2);
+        const n = i * 2;
         values.push(n);
       }
 
@@ -2490,8 +2489,8 @@ async function testInsertAndRemove(core: Core, hasher: Hasher, originalSize: num
       for (let i = 0; i < values.length; i++) {
         const val = values[i];
         const n = (
-          await cursor.readPath([new HashMapGet(new HashMapGetValue(evenInsertKey)), new LinkedArrayListGet(BigInt(i))])
-        )!.slotPtr.slot.value;
+          await cursor.readPath([new HashMapGet(new HashMapGetValue(evenInsertKey)), new LinkedArrayListGet(i)])
+        )!.readUint();
         expect(val).toBe(n);
       }
 
@@ -2512,7 +2511,7 @@ async function testInsertAndRemove(core: Core, hasher: Hasher, originalSize: num
       expect(
         await cursor.readPath([
           new HashMapGet(new HashMapGetValue(evenInsertKey)),
-          new LinkedArrayListGet(BigInt(values.length)),
+          new LinkedArrayListGet(values.length),
         ])
       ).toBeNull();
     }),

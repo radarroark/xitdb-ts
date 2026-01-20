@@ -25,7 +25,7 @@ export class WriteCountedHashSet extends WriteHashSet {
     return set;
   }
 
-  async count(): Promise<bigint> {
+  async count(): Promise<number> {
     return this.cursor.count();
   }
 }

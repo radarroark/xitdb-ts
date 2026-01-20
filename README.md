@@ -47,7 +47,7 @@ const history = await WriteArrayList.create(await db.rootCursor());
 //    {"name": "Alice", "age": 25},
 //    {"name": "Bob", "age": 42}
 //  ]}
-await history.appendContext(await history.getSlot(-1n), async (cursor) => {
+await history.appendContext(await history.getSlot(-1), async (cursor) => {
   const moment = await WriteHashMap.create(cursor);
 
   await moment.putByString('foo', new Bytes('foo'));
@@ -65,17 +65,17 @@ await history.appendContext(await history.getSlot(-1n), async (cursor) => {
   const aliceCursor = await people.appendCursor();
   const alice = await WriteHashMap.create(aliceCursor);
   await alice.putByString('name', new Bytes('Alice'));
-  await alice.putByString('age', new Uint(25n));
+  await alice.putByString('age', new Uint(25));
 
   const bobCursor = await people.appendCursor();
   const bob = await WriteHashMap.create(bobCursor);
   await bob.putByString('name', new Bytes('Bob'));
-  await bob.putByString('age', new Uint(42n));
+  await bob.putByString('age', new Uint(42));
 });
 
 // get the most recent copy of the database, like a moment
-// in time. the -1n index will return the last index in the list.
-const momentCursor = await history.getCursor(-1n);
+// in time. the -1 index will return the last index in the list.
+const momentCursor = await history.getCursor(-1);
 const moment = await ReadHashMap.create(momentCursor!);
 
 // we can read the value of "foo" from the map by getting
@@ -88,10 +88,10 @@ console.log(new TextDecoder().decode(fooValue)); // "foo"
 // then pass it to the ReadArrayList constructor
 const fruitsCursor = await moment.getCursorByString('fruits');
 const fruits = new ReadArrayList(fruitsCursor!);
-console.log(await fruits.count()); // 3n
+console.log(await fruits.count()); // 3
 
 // now we can get the first item from the fruits list and read it
-const appleCursor = await fruits.getCursor(0n);
+const appleCursor = await fruits.getCursor(0);
 const appleValue = await appleCursor!.readBytes(MAX_READ_BYTES);
 console.log(new TextDecoder().decode(appleValue)); // "apple"
 ```
@@ -123,8 +123,8 @@ All data structures use the hash array mapped trie, invented by Phil Bagwell. Th
 There are also scalar types you can store in the above-mentioned data structures:
 
 * `Bytes` is a byte array
-* `Uint` is an unsigned 64-bit int (bigint)
-* `Int` is a signed 64-bit int (bigint)
+* `Uint` is an unsigned 64-bit int
+* `Int` is a signed 64-bit int
 * `Float` is a 64-bit float
 
 You may also want to define custom types. For example, you may want to store a big integer that can't fit in 64 bits. You could just store this with `Bytes`, but when reading the byte array there wouldn't be any indication that it should be interpreted as a big integer.
@@ -153,7 +153,7 @@ There are many types you may want to store this way. Maybe an ISO-8601 date like
 A powerful feature of immutable data is fast cloning. Any data structure can be instantly cloned and changed without affecting the original. Starting with the example code above, we can make a new transaction that creates a "food" list based on the existing "fruits" list:
 
 ```typescript
-await history.appendContext(await history.getSlot(-1n), async (cursor) => {
+await history.appendContext(await history.getSlot(-1), async (cursor) => {
   const moment = await WriteHashMap.create(cursor);
 
   const fruitsCursor = await moment.getCursorByString('fruits');
@@ -170,30 +170,30 @@ await history.appendContext(await history.getSlot(-1n), async (cursor) => {
   await food.append(new Bytes('fish'));
 });
 
-const momentCursor = await history.getCursor(-1n);
+const momentCursor = await history.getCursor(-1);
 const moment = await ReadHashMap.create(momentCursor!);
 
 // the food list includes the fruits
 const foodCursor = await moment.getCursorByString('food');
 const food = new ReadArrayList(foodCursor!);
-console.log(await food.count()); // 6n
+console.log(await food.count()); // 6
 
 // ...but the fruits list hasn't been changed
 const fruitsCursor = await moment.getCursorByString('fruits');
 const fruits = new ReadArrayList(fruitsCursor!);
-console.log(await fruits.count()); // 3n
+console.log(await fruits.count()); // 3
 ```
 
 Before we continue, let's save the latest history index, so we can revert back to this moment of the database later:
 
 ```typescript
-const historyIndex = (await history.count()) - 1n;
+const historyIndex = (await history.count()) - 1;
 ```
 
 There's one catch you'll run into when cloning. If we try cloning a data structure that was created in the same transaction, it doesn't seem to work:
 
 ```typescript
-await history.appendContext(await history.getSlot(-1n), async (cursor) => {
+await history.appendContext(await history.getSlot(-1), async (cursor) => {
   const moment = await WriteHashMap.create(cursor);
 
   const bigCitiesCursor = await moment.putCursorByString('big-cities');
@@ -211,18 +211,18 @@ await history.appendContext(await history.getSlot(-1n), async (cursor) => {
   await cities.append(new Bytes('Louisville, KY'));
 });
 
-const momentCursor = await history.getCursor(-1n);
+const momentCursor = await history.getCursor(-1);
 const moment = await ReadHashMap.create(momentCursor!);
 
 // the cities list contains all four
 const citiesCursor = await moment.getCursorByString('cities');
 const cities = new ReadArrayList(citiesCursor!);
-console.log(await cities.count()); // 4n
+console.log(await cities.count()); // 4
 
 // ..but so does big-cities! we did not intend to mutate this
 const bigCitiesCursor = await moment.getCursorByString('big-cities');
 const bigCities = new ReadArrayList(bigCitiesCursor!);
-console.log(await bigCities.count()); // 4n
+console.log(await bigCities.count()); // 4
 ```
 
 The reason that `big-cities` was mutated is because all data in a given transaction is temporarily mutable. This is a very important optimization, but in this case, it's not what we want.
@@ -236,7 +236,7 @@ await history.append((await history.getSlot(historyIndex))!);
 This time, after making the "big cities" list, we call `freeze`, which tells xitdb to consider all data made so far in the transaction to be immutable. After that, we can clone it into the "cities" list and it will work the way we wanted:
 
 ```typescript
-await history.appendContext(await history.getSlot(-1n), async (cursor) => {
+await history.appendContext(await history.getSlot(-1), async (cursor) => {
   const moment = await WriteHashMap.create(cursor);
 
   const bigCitiesCursor = await moment.putCursorByString('big-cities');
@@ -257,18 +257,18 @@ await history.appendContext(await history.getSlot(-1n), async (cursor) => {
   await cities.append(new Bytes('Louisville, KY'));
 });
 
-const momentCursor = await history.getCursor(-1n);
+const momentCursor = await history.getCursor(-1);
 const moment = await ReadHashMap.create(momentCursor!);
 
 // the cities list contains all four
 const citiesCursor = await moment.getCursorByString('cities');
 const cities = new ReadArrayList(citiesCursor!);
-console.log(await cities.count()); // 4n
+console.log(await cities.count()); // 4
 
 // and big-cities only contains the original two
 const bigCitiesCursor = await moment.getCursorByString('big-cities');
 const bigCities = new ReadArrayList(bigCitiesCursor!);
-console.log(await bigCities.count()); // 2n
+console.log(await bigCities.count()); // 2
 ```
 
 ## Large Byte Arrays
@@ -356,7 +356,7 @@ const db = await Database.create(core, hasher);
 The size of the hash in bytes will be stored in the database's header. If you try opening it later with a hashing algorithm that has the wrong hash size, it will throw an exception. If you are unsure what hash size the database uses, this creates a chicken-and-egg problem. You can read the header before initializing the database like this:
 
 ```typescript
-await core.seek(0n);
+await core.seek(0);
 const header = await Header.read(core);
 console.log(header.hashSize); // 20
 ```
@@ -370,7 +370,7 @@ const hasher = new Hasher('SHA-1', Hasher.stringToId('sha1'));
 The hash id is only written to the database header when it is first initialized. When you open it later, the hash id in the `Hasher` is ignored. You can read the hash id of an existing database like this:
 
 ```typescript
-await core.seek(0n);
+await core.seek(0);
 const header = await Header.read(core);
 console.log(Hasher.idToString(header.hashId)); // "sha1"
 ```

@@ -29,14 +29,14 @@ export class WriteArrayList extends ReadArrayList {
     yield* this.cursor as WriteCursor;
   }
 
-  async put(index: bigint, data: WriteableData): Promise<void> {
+  async put(index: number, data: WriteableData): Promise<void> {
     await (this.cursor as WriteCursor).writePath([
       new ArrayListGet(index),
       new WriteData(data),
     ]);
   }
 
-  async putCursor(index: bigint): Promise<WriteCursor> {
+  async putCursor(index: number): Promise<WriteCursor> {
     return (this.cursor as WriteCursor).writePath([new ArrayListGet(index)]);
   }
 
@@ -59,7 +59,7 @@ export class WriteArrayList extends ReadArrayList {
     ]);
   }
 
-  async slice(size: bigint): Promise<void> {
+  async slice(size: number): Promise<void> {
     await (this.cursor as WriteCursor).writePath([new ArrayListSlice(size)]);
   }
 }
