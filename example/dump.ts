@@ -21,9 +21,9 @@ async function formatKey(cursor: ReadCursor): Promise<string> {
       return `"${text}"`;
     }
     case Tag.UINT:
-      return `${cursor.readUint()}n`;
+      return `${cursor.readUint()}`;
     case Tag.INT:
-      return `${cursor.readInt()}n`;
+      return `${cursor.readInt()}`;
     case Tag.FLOAT:
       return `${cursor.readFloat()}`;
     default:
@@ -150,13 +150,13 @@ async function printValue(cursor: ReadCursor, indent: string): Promise<void> {
 
     case Tag.UINT: {
       const value = cursor.readUint();
-      console.log(`${indent}${value}n (uint)`);
+      console.log(`${indent}${value} (uint)`);
       break;
     }
 
     case Tag.INT: {
       const value = cursor.readInt();
-      console.log(`${indent}${value}n (int)`);
+      console.log(`${indent}${value} (int)`);
       break;
     }
 
