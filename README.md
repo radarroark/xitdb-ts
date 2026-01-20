@@ -1,4 +1,4 @@
-xitdb is an immutable database written in TypeScript.
+xitdb is an immutable database written in TypeScript. It is available [on npm](https://www.npmjs.com/package/xitdb).
 
 * Each transaction efficiently creates a new "copy" of the database, and past copies can still be read from.
 * It supports writing to a file as well as purely in-memory use.
