@@ -105,8 +105,6 @@ A `Database` is initialized with an implementation of the `Core` interface, whic
 * `CoreMemory` databases work completely in memory. You can initialize it with a `RandomAccessMemory` instance.
 
 ```typescript
-import { CoreMemory, RandomAccessMemory, Database, Hasher } from 'xitdb';
-
 const ram = new RandomAccessMemory();
 const core = new CoreMemory(ram);
 const hasher = new Hasher('SHA-1');
@@ -311,8 +309,6 @@ console.log(lines.length); // 50
 All data structures support iteration. Here's an example of iterating over an `ArrayList` and printing all of the keys and values of each `HashMap` contained in it:
 
 ```typescript
-import { Tag } from 'xitdb';
-
 const peopleCursor = await moment.getCursorByString('people');
 const people = new ReadArrayList(peopleCursor!);
 
