@@ -1,0 +1,12 @@
+{
+  "name": "xitdb-example",
+  "version": "1.0.0",
+  "description": "Example program for xitdb",
+  "type": "module",
+  "scripts": {
+    "dump": "bun run dump.ts"
+  },
+  "dependencies": {
+    "xitdb": "0.2.0"
+  }
+}

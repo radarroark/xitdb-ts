@@ -6,7 +6,7 @@ import {
   ReadArrayList,
   ReadCursor,
   Tag,
-} from '../src';
+} from 'xitdb';
 
 async function formatKey(cursor: ReadCursor): Promise<string> {
   const tag = cursor.slotPtr.slot.tag;

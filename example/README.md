@@ -1,7 +1,8 @@
-This is an example program that reads a xitdb file and prints out its most recent value (the last item of the top-level ArrayList). From the root of this repo, run:
+This is an example program that reads a xitdb file and prints out its most recent value (the last item of the top-level ArrayList). To run it, do:
 
 ```
-bun run example/dump.ts tests/fixtures/test.db
+bun install
+bun run dump.ts ../tests/fixtures/test.db
 ```
 
 ...and it will print:
