@@ -1,0 +1,20 @@
+;; Todo list application data
+{
+  :app/name "My Todo App"
+  :app/version "1.0.0"
+
+  :todos [
+    {:id 1 :title "Buy groceries" :completed false :priority :high}
+    {:id 2 :title "Write documentation" :completed true :priority :medium}
+    {:id 3 :title "Review pull requests" :completed false :priority :high}
+    {:id 4 :title "Clean workspace" :completed false :priority :low}
+  ]
+
+  :categories #{:work :personal :shopping :health}
+
+  :settings {
+    :default-priority :medium
+    :show-completed true
+    :sort-by :priority
+  }
+}

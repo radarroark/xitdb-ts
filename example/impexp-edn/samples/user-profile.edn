@@ -1,0 +1,16 @@
+;; User profile with nested data
+{
+  :user/id "usr-12345"
+  :user/name "John Doe"
+  :user/email "john.doe@example.com"
+  :user/age 42
+  :user/balance 1234.56
+  :user/verified true
+  :user/roles [:admin :developer :reviewer]
+  :user/preferences {
+    :theme "dark"
+    :language "en"
+    :notifications true
+  }
+  :user/tags #{"vip" "beta-tester" "early-adopter"}
+}

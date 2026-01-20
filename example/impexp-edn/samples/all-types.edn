@@ -1,0 +1,57 @@
+;; Demonstrates all supported EDN types
+{
+  ;; Nil
+  :nil-value nil
+
+  ;; Booleans
+  :bool-true true
+  :bool-false false
+
+  ;; Integers (stored as signed bigint)
+  :int-positive 42
+  :int-negative -17
+  :int-zero 0
+  :int-large 9999999999999
+
+  ;; Floats
+  :float-simple 3.14
+  :float-negative -2.718
+  :float-scientific 1.23e10
+
+  ;; Strings
+  :string-simple "Hello, World!"
+  :string-with-escapes "Line 1\nLine 2\tTabbed"
+  :string-with-quotes "She said \"Hello\""
+
+  ;; Keywords (simple and namespaced)
+  :keyword-simple :status
+  :keyword-namespaced :user/name
+
+  ;; Symbols
+  :symbol-simple my-symbol
+  :symbol-namespaced clojure.core/map
+
+  ;; Vector (ordered, indexed)
+  :vector-empty []
+  :vector-numbers [1 2 3 4 5]
+  :vector-mixed ["a" 1 true nil]
+
+  ;; List (ordered, linked)
+  :list-empty ()
+  :list-numbers (10 20 30)
+  :list-nested (1 (2 3) (4 (5 6)))
+
+  ;; Set (unordered, unique)
+  :set-empty #{}
+  :set-strings #{"apple" "banana" "cherry"}
+  :set-keywords #{:red :green :blue}
+
+  ;; Nested map
+  :nested-map {
+    :level1 {
+      :level2 {
+        :level3 "deeply nested"
+      }
+    }
+  }
+}

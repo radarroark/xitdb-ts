@@ -1,0 +1,46 @@
+;; Product inventory with various data types
+{
+  :store/name "Tech Store"
+  :store/location "123 Main St"
+
+  :products [
+    {
+      :sku "LAPTOP-001"
+      :name "Pro Laptop 15"
+      :price 1299.99
+      :quantity 25
+      :specs {
+        :cpu "Intel i7"
+        :ram 16
+        :storage 512
+      }
+      :tags #{"electronics" "computers" "featured"}
+    }
+    {
+      :sku "PHONE-042"
+      :name "SmartPhone X"
+      :price 899.00
+      :quantity 100
+      :specs {
+        :screen 6.5
+        :battery 4500
+        :camera 108
+      }
+      :tags #{"electronics" "phones" "bestseller"}
+    }
+    {
+      :sku "HEADPHONES-007"
+      :name "Wireless Earbuds Pro"
+      :price 199.99
+      :quantity 250
+      :specs {
+        :battery-life 8
+        :noise-cancellation true
+        :water-resistant true
+      }
+      :tags #{"electronics" "audio" "portable"}
+    }
+  ]
+
+  :last-updated "2024-01-15T10:30:00Z"
+}
