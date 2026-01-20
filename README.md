@@ -91,18 +91,18 @@ const moment = await ReadHashMap.create(momentCursor!);
 // the cursor to "foo" and then calling readBytes on it
 const fooCursor = await moment.getCursorByString('foo');
 const fooValue = await fooCursor!.readBytes(MAX_READ_BYTES);
-console.log(new TextDecoder().decode(fooValue)); // "foo"
+expect(new TextDecoder().decode(fooValue)).toBe('foo');
 
 // to get the "fruits" list, we get the cursor to it and
 // then pass it to the ReadArrayList constructor
 const fruitsCursor = await moment.getCursorByString('fruits');
 const fruits = new ReadArrayList(fruitsCursor!);
-console.log(await fruits.count()); // 3
+expect(await fruits.count()).toBe(3);
 
 // now we can get the first item from the fruits list and read it
 const appleCursor = await fruits.getCursor(0);
 const appleValue = await appleCursor!.readBytes(MAX_READ_BYTES);
-console.log(new TextDecoder().decode(appleValue)); // "apple"
+expect(new TextDecoder().decode(appleValue)).toBe('apple');
 ```
 
 ## Initializing a Database
@@ -151,7 +151,7 @@ Then, you can read it like this:
 ```typescript
 const randomNumberCursor = await moment.getCursorByString('random-number');
 const randomNumber = await randomNumberCursor!.readBytesObject(MAX_READ_BYTES);
-console.log(new TextDecoder().decode(randomNumber.formatTag!)); // "bi"
+expect(new TextDecoder().decode(randomNumber.formatTag!)).toBe('bi');
 const randomBigInt = randomNumber.value;
 ```
 
@@ -185,12 +185,12 @@ const moment = await ReadHashMap.create(momentCursor!);
 // the food list includes the fruits
 const foodCursor = await moment.getCursorByString('food');
 const food = new ReadArrayList(foodCursor!);
-console.log(await food.count()); // 6
+expect(await food.count()).toBe(6);
 
 // ...but the fruits list hasn't been changed
 const fruitsCursor = await moment.getCursorByString('fruits');
 const fruits = new ReadArrayList(fruitsCursor!);
-console.log(await fruits.count()); // 3
+expect(await fruits.count()).toBe(3);
 ```
 
 Before we continue, let's save the latest history index, so we can revert back to this moment of the database later:
@@ -226,12 +226,12 @@ const moment = await ReadHashMap.create(momentCursor!);
 // the cities list contains all four
 const citiesCursor = await moment.getCursorByString('cities');
 const cities = new ReadArrayList(citiesCursor!);
-console.log(await cities.count()); // 4
+expect(await cities.count()).toBe(4);
 
 // ..but so does big-cities! we did not intend to mutate this
 const bigCitiesCursor = await moment.getCursorByString('big-cities');
 const bigCities = new ReadArrayList(bigCitiesCursor!);
-console.log(await bigCities.count()); // 4
+expect(await bigCities.count()).toBe(4);
 ```
 
 The reason that `big-cities` was mutated is because all data in a given transaction is temporarily mutable. This is a very important optimization, but in this case, it's not what we want.
@@ -272,12 +272,12 @@ const moment = await ReadHashMap.create(momentCursor!);
 // the cities list contains all four
 const citiesCursor = await moment.getCursorByString('cities');
 const cities = new ReadArrayList(citiesCursor!);
-console.log(await cities.count()); // 4
+expect(await cities.count()).toBe(4);
 
 // and big-cities only contains the original two
 const bigCitiesCursor = await moment.getCursorByString('big-cities');
 const bigCities = new ReadArrayList(bigCitiesCursor!);
-console.log(await bigCities.count()); // 2
+expect(await bigCities.count()).toBe(2);
 ```
 
 ## Large Byte Arrays
@@ -300,10 +300,16 @@ To read a byte array incrementally, get a reader from a cursor:
 ```typescript
 const longTextCursor = await moment.getCursorByString('long-text');
 const cursorReader = await longTextCursor!.reader();
-const content = new Uint8Array(Number(await longTextCursor!.count()));
-await cursorReader.readFully(content);
-const lines = new TextDecoder().decode(content).split('\n').filter(l => l.length > 0);
-console.log(lines.length); // 50
+let lineCount = 0, line: number[] = [];
+const buf = new Uint8Array(1024);
+for (let n; (n = await cursorReader.read(buf)) > 0; ) {
+  for (let i = 0; i < n; i++) {
+    if (buf[i] === 0x0A) { lineCount++; line = []; }
+    else line.push(buf[i]);
+  }
+}
+if (line.length > 0) lineCount++;
+expect(lineCount).toBe(50);
 ```
 
 ## Iterators
@@ -367,7 +373,7 @@ The size of the hash in bytes will be stored in the database's header. If you tr
 ```typescript
 await core.seek(0);
 const header = await Header.read(core);
-console.log(header.hashSize); // 20
+expect(header.hashSize).toBe(20);
 ```
 
 The hash size alone does not disambiguate hashing algorithms, though. In addition, xitdb reserves four bytes in the header that you can use to put the name of the algorithm. You must provide it in the `Hasher` constructor:
@@ -381,7 +387,7 @@ The hash id is only written to the database header when it is first initialized.
 ```typescript
 await core.seek(0);
 const header = await Header.read(core);
-console.log(Hasher.idToString(header.hashId)); // "sha1"
+expect(Hasher.idToString(header.hashId)).toBe("sha1");
 ```
 
 If you want to use SHA-256, I recommend using `sha2` as the hash id. You can then distinguish between SHA-256 and SHA-512 using the hash size, like this:

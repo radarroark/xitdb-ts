@@ -596,10 +596,16 @@ async function testHighLevelApi(core: Core, hasher: Hasher, filePath: string | n
     {
       const longTextCursor = await moment.getCursorByString('long-text');
       const cursorReader = await longTextCursor!.reader();
-      const content = new Uint8Array(Number(await longTextCursor!.count()));
-      await cursorReader.readFully(content);
-      const lines = new TextDecoder().decode(content).split('\n').filter(l => l.length > 0);
-      expect(lines.length).toBe(50);
+      let lineCount = 0, line: number[] = [];
+      const buf = new Uint8Array(1024);
+      for (let n; (n = await cursorReader.read(buf)) > 0; ) {
+        for (let i = 0; i < n; i++) {
+          if (buf[i] === 0x0A) { lineCount++; line = []; }
+          else line.push(buf[i]);
+        }
+      }
+      if (line.length > 0) lineCount++;
+      expect(lineCount).toBe(50);
     }
   }
 
