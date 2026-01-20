@@ -22,7 +22,7 @@ export class CoreBufferedFile implements Core {
   }
 
   async length(): Promise<bigint> {
-    return BigInt(await this.file.length());
+    return await this.file.length();
   }
 
   async seek(pos: bigint): Promise<void> {
@@ -34,7 +34,7 @@ export class CoreBufferedFile implements Core {
   }
 
   async setLength(len: bigint): Promise<void> {
-    await this.file.setLength(Number(len));
+    await this.file.setLength(len);
   }
 
   async flush(): Promise<void> {

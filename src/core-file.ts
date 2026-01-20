@@ -2,6 +2,65 @@ import type { Core, DataReader, DataWriter } from './core';
 import * as fs from 'fs/promises';
 import type { FileHandle } from 'fs/promises';
 
+export class CoreFile implements Core {
+  public filePath: string;
+  private _position: bigint = 0n;
+  public fileHandle: FileHandle;
+
+  private constructor(filePath: string, fileHandle: FileHandle) {
+    this.filePath = filePath;
+    this.fileHandle = fileHandle;
+  }
+
+  static async create(filePath: string): Promise<CoreFile> {
+    // Create file if it doesn't exist
+    try {
+      await fs.access(filePath);
+    } catch {
+      await fs.writeFile(filePath, new Uint8Array(0));
+    }
+    // Open file handle for reading and writing
+    const fileHandle = await fs.open(filePath, 'r+');
+    return new CoreFile(filePath, fileHandle);
+  }
+
+  reader(): DataReader {
+    return new FileDataReader(this);
+  }
+
+  writer(): DataWriter {
+    return new FileDataWriter(this);
+  }
+
+  async length(): Promise<bigint> {
+    const stats = await this.fileHandle.stat();
+    return BigInt(stats.size);
+  }
+
+  async seek(pos: bigint): Promise<void> {
+    this._position = pos;
+  }
+
+  position(): bigint {
+    return this._position;
+  }
+
+  async setLength(len: bigint): Promise<void> {
+    await this.fileHandle.truncate(Number(len));
+  }
+
+  async flush(): Promise<void> {
+  }
+
+  async sync(): Promise<void> {
+    await this.fileHandle.sync();
+  }
+
+  async close(): Promise<void> {
+    await this.fileHandle.close();
+  }
+}
+
 class FileDataReader implements DataReader {
   private core: CoreFile;
 
@@ -72,64 +131,5 @@ class FileDataWriter implements DataWriter {
     const view = new DataView(buffer);
     view.setBigInt64(0, v, false);
     await this.write(new Uint8Array(buffer));
-  }
-}
-
-export class CoreFile implements Core {
-  public filePath: string;
-  private _position: bigint = 0n;
-  public fileHandle: FileHandle;
-
-  private constructor(filePath: string, fileHandle: FileHandle) {
-    this.filePath = filePath;
-    this.fileHandle = fileHandle;
-  }
-
-  static async create(filePath: string): Promise<CoreFile> {
-    // Create file if it doesn't exist
-    try {
-      await fs.access(filePath);
-    } catch {
-      await fs.writeFile(filePath, new Uint8Array(0));
-    }
-    // Open file handle for reading and writing
-    const fileHandle = await fs.open(filePath, 'r+');
-    return new CoreFile(filePath, fileHandle);
-  }
-
-  reader(): DataReader {
-    return new FileDataReader(this);
-  }
-
-  writer(): DataWriter {
-    return new FileDataWriter(this);
-  }
-
-  async length(): Promise<bigint> {
-    const stats = await this.fileHandle.stat();
-    return BigInt(stats.size);
-  }
-
-  async seek(pos: bigint): Promise<void> {
-    this._position = pos;
-  }
-
-  position(): bigint {
-    return this._position;
-  }
-
-  async setLength(len: bigint): Promise<void> {
-    await this.fileHandle.truncate(Number(len));
-  }
-
-  async flush(): Promise<void> {
-  }
-
-  async sync(): Promise<void> {
-    await this.fileHandle.sync();
-  }
-
-  async close(): Promise<void> {
-    await this.fileHandle.close();
   }
 }
