@@ -10,6 +10,7 @@
     "export": "bun run index.ts export_edn"
   },
   "dependencies": {
+    "edn-data": "^1.1.2",
     "xitdb": "file:../.."
   },
   "devDependencies": {
