@@ -71,7 +71,7 @@ describe('Database High Level API', () => {
     const tmpDir = await mkdtemp(join(tmpdir(), 'xitdb-'));
     const filePath = join(tmpDir, 'test.db');
     try {
-      const core = await CoreFile.create(filePath);
+      using core = await CoreFile.create(filePath);
       const hasher = new Hasher('SHA-1');
       await testHighLevelApi(core, hasher, filePath);
     } finally {
@@ -83,7 +83,7 @@ describe('Database High Level API', () => {
     const tmpDir = await mkdtemp(join(tmpdir(), 'xitdb-'));
     const filePath = join(tmpDir, 'test.db');
     try {
-      const core = await CoreBufferedFile.create(filePath);
+      using core = await CoreBufferedFile.create(filePath);
       const hasher = new Hasher('SHA-1');
       await testHighLevelApi(core, hasher, filePath);
     } finally {
@@ -125,7 +125,7 @@ describe('Database High Level API', () => {
 
   test('read database from fixture', async () => {
     const filePath = new URL('./fixtures/test.db', import.meta.url).pathname;
-    const core = await CoreFile.create(filePath);
+    using core = await CoreFile.create(filePath);
     const hasher = new Hasher('SHA-1');
     const db = await Database.create(core, hasher);
     const history = new ReadArrayList(await db.rootCursor());
@@ -356,7 +356,7 @@ describe('Database Low Level API', () => {
     const tmpDir = await mkdtemp(join(tmpdir(), 'xitdb-'));
     const filePath = join(tmpDir, 'test.db');
     try {
-      const core = await CoreFile.create(filePath);
+      using core = await CoreFile.create(filePath);
       const hasher = new Hasher('SHA-1');
       await testLowLevelApi(core, hasher);
     } finally {
@@ -368,7 +368,7 @@ describe('Database Low Level API', () => {
     const tmpDir = await mkdtemp(join(tmpdir(), 'xitdb-'));
     const filePath = join(tmpDir, 'test.db');
     try {
-      const core = await CoreBufferedFile.create(filePath);
+      using core = await CoreBufferedFile.create(filePath);
       const hasher = new Hasher('SHA-1');
       await testLowLevelApi(core, hasher);
     } finally {

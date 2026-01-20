@@ -56,8 +56,10 @@ export class CoreFile implements Core {
     await this.fileHandle.sync();
   }
 
-  async close(): Promise<void> {
-    await this.fileHandle.close();
+  [Symbol.dispose]() {
+    import("fs").then(fs => {
+      fs.closeSync(this.fileHandle.fd);
+    });
   }
 }
 

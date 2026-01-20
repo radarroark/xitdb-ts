@@ -47,14 +47,14 @@ export class CoreBufferedFile implements Core {
   }
 
   [Symbol.dispose]() {
-    this.file.close();
+    this.file.file[Symbol.dispose]();
   }
 }
 
 const DEFAULT_BUFFER_SIZE = BigInt(8 * 1024 * 1024); // 8MB
 
 class RandomAccessBufferedFile implements DataReader, DataWriter {
-  private file: CoreFile;
+  public file: CoreFile;
   private memory: CoreMemory;
   private bufferSize: bigint; // flushes when the memory is >= this size
   private filePos: bigint;
@@ -222,9 +222,5 @@ class RandomAccessBufferedFile implements DataReader, DataWriter {
     await this.readFully(bytes);
     const view = new DataView(bytes.buffer, bytes.byteOffset, bytes.byteLength);
     return view.getBigInt64(0, false); // big-endian
-  }
-
-  async close(): Promise<void> {
-    await this.file.close();
   }
 }

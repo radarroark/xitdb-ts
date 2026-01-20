@@ -22,7 +22,7 @@ In this example, we create a new database, write some data in a transaction, and
 
 ```typescript
 // init the db
-const core = await CoreBufferedFile.create('main.db');
+using core = await CoreBufferedFile.create('main.db');
 const hasher = new Hasher('SHA-1');
 const db = await Database.create(core, hasher);
 
@@ -348,7 +348,7 @@ The hashing data structures will create the hash for you when you call methods l
 When initializing a database, you tell xitdb how to hash with the `Hasher`. If you're using SHA-1, it will look like this:
 
 ```typescript
-const core = await CoreBufferedFile.create('main.db');
+using core = await CoreBufferedFile.create('main.db');
 const hasher = new Hasher('SHA-1');
 const db = await Database.create(core, hasher);
 ```
