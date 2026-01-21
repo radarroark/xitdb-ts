@@ -320,13 +320,11 @@ All data structures support iteration. Here's an example of iterating over an `A
 const peopleCursor = await moment.getCursorByString('people');
 const people = new ReadArrayList(peopleCursor!);
 
-const peopleIter = people.iterator();
-await peopleIter.init();
+const peopleIter = await people.iterator();
 while (await peopleIter.hasNext()) {
   const personCursor = await peopleIter.next();
   const person = await ReadHashMap.create(personCursor!);
-  const personIter = person.iterator();
-  await personIter.init();
+  const personIter = await person.iterator();
   while (await personIter.hasNext()) {
     const kvPairCursor = await personIter.next();
     const kvPair = await kvPairCursor!.readKeyValuePair();

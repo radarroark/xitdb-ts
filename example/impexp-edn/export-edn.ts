@@ -88,8 +88,7 @@ async function cursorToEdnValue(cursor: ReadCursor): Promise<EDNVal> {
 
     case Tag.LINKED_ARRAY_LIST: {
       const elements: EDNVal[] = [];
-      const iter = cursor.iterator();
-      await iter.init();
+      const iter = await cursor.iterator();
       while (await iter.hasNext()) {
         const itemCursor = await iter.next();
         if (itemCursor) {
@@ -102,8 +101,7 @@ async function cursorToEdnValue(cursor: ReadCursor): Promise<EDNVal> {
     case Tag.HASH_MAP:
     case Tag.COUNTED_HASH_MAP: {
       const entries: [EDNVal, EDNVal][] = [];
-      const iter = cursor.iterator();
-      await iter.init();
+      const iter = await cursor.iterator();
       while (await iter.hasNext()) {
         const kvPairCursor = await iter.next();
         if (kvPairCursor) {
@@ -119,8 +117,7 @@ async function cursorToEdnValue(cursor: ReadCursor): Promise<EDNVal> {
     case Tag.HASH_SET:
     case Tag.COUNTED_HASH_SET: {
       const elements: EDNVal[] = [];
-      const iter = cursor.iterator();
-      await iter.init();
+      const iter = await cursor.iterator();
       while (await iter.hasNext()) {
         const kvPairCursor = await iter.next();
         if (kvPairCursor) {

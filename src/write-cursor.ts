@@ -73,8 +73,7 @@ export class WriteCursor extends ReadCursor {
   }
 
   override async *[Symbol.asyncIterator](): AsyncIterator<WriteCursor> {
-    const iterator = new WriteCursorIterator(this);
-    await iterator.init();
+    const iterator = await this.iterator();
     while (await iterator.hasNext()) {
       const next = await iterator.next();
       if (next !== null) {
@@ -83,8 +82,10 @@ export class WriteCursor extends ReadCursor {
     }
   }
 
-  override iterator(): WriteCursorIterator {
-    return new WriteCursorIterator(this);
+  override async iterator(): Promise<WriteCursorIterator> {
+    const iterator = new WriteCursorIterator(this);
+    await iterator.init();
+    return iterator;
   }
 }
 

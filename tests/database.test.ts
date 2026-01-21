@@ -179,14 +179,12 @@ describe('Database High Level API', () => {
       expect(new TextDecoder().decode(todoValue)).toBe('Pay the bills');
 
       // Test iterating over people
-      const peopleIter = people.iterator();
-      await peopleIter.init();
+      const peopleIter = await people.iterator();
       while (await peopleIter.hasNext()) {
         const personCursor = await peopleIter.next();
         expect(personCursor).not.toBeNull();
         const person = await ReadHashMap.create(personCursor!);
-        const personIter = person.iterator();
-        await personIter.init();
+        const personIter = await person.iterator();
         while (await personIter.hasNext()) {
           const kvPairCursor = await personIter.next();
           expect(kvPairCursor).not.toBeNull();
@@ -201,8 +199,7 @@ describe('Database High Level API', () => {
         const lettersCountedMap = await ReadCountedHashMap.create(lettersCountedMapCursor!);
         expect(await lettersCountedMap.count()).toBe(2);
 
-        const iter = lettersCountedMap.iterator();
-        await iter.init();
+        const iter = await lettersCountedMap.iterator();
         let count = 0;
         while (await iter.hasNext()) {
           const kvPairCursor = await iter.next();
@@ -222,8 +219,7 @@ describe('Database High Level API', () => {
         expect(await lettersSet.getCursorByString('a')).not.toBeNull();
         expect(await lettersSet.getCursorByString('c')).not.toBeNull();
 
-        const iter = lettersSet.iterator();
-        await iter.init();
+        const iter = await lettersSet.iterator();
         let count = 0;
         while (await iter.hasNext()) {
           const kvPairCursor = await iter.next();
@@ -242,8 +238,7 @@ describe('Database High Level API', () => {
         const lettersCountedSet = await ReadCountedHashSet.create(lettersCountedSetCursor!);
         expect(await lettersCountedSet.count()).toBe(2);
 
-        const iter = lettersCountedSet.iterator();
-        await iter.init();
+        const iter = await lettersCountedSet.iterator();
         let count = 0;
         while (await iter.hasNext()) {
           const kvPairCursor = await iter.next();
@@ -491,13 +486,11 @@ async function testHighLevelApi(core: Core, hasher: Hasher, filePath: string | n
     expect(new TextDecoder().decode(todoValue)).toBe('Pay the bills');
 
     // iterate over people
-    const peopleIter = people.iterator();
-    await peopleIter.init();
+    const peopleIter = await people.iterator();
     while (await peopleIter.hasNext()) {
       const personCursor = await peopleIter.next();
       const person = await ReadHashMap.create(personCursor!);
-      const personIter = person.iterator();
-      await personIter.init();
+      const personIter = await person.iterator();
       while (await personIter.hasNext()) {
         const kvPairCursor = await personIter.next();
         const kvPair = await kvPairCursor!.readKeyValuePair();
@@ -522,8 +515,7 @@ async function testHighLevelApi(core: Core, hasher: Hasher, filePath: string | n
     }
 
     // iterate over fruits
-    const fruitsIter = fruits.iterator();
-    await fruitsIter.init();
+    const fruitsIter = await fruits.iterator();
     while (await fruitsIter.hasNext()) {
       await fruitsIter.next();
     }
@@ -534,8 +526,7 @@ async function testHighLevelApi(core: Core, hasher: Hasher, filePath: string | n
       const lettersCountedMap = await ReadCountedHashMap.create(lettersCountedMapCursor!);
       expect(await lettersCountedMap.count()).toBe(2);
 
-      const iter = lettersCountedMap.iterator();
-      await iter.init();
+      const iter = await lettersCountedMap.iterator();
       let count = 0;
       while (await iter.hasNext()) {
         const kvPairCursor = await iter.next();
@@ -553,8 +544,7 @@ async function testHighLevelApi(core: Core, hasher: Hasher, filePath: string | n
       expect(await lettersSet.getCursorByString('a')).not.toBeNull();
       expect(await lettersSet.getCursorByString('c')).not.toBeNull();
 
-      const iter = lettersSet.iterator();
-      await iter.init();
+      const iter = await lettersSet.iterator();
       let count = 0;
       while (await iter.hasNext()) {
         const kvPairCursor = await iter.next();
@@ -571,8 +561,7 @@ async function testHighLevelApi(core: Core, hasher: Hasher, filePath: string | n
       const lettersCountedSet = await ReadCountedHashSet.create(lettersCountedSetCursor!);
       expect(await lettersCountedSet.count()).toBe(2);
 
-      const iter = lettersCountedSet.iterator();
-      await iter.init();
+      const iter = await lettersCountedSet.iterator();
       let count = 0;
       while (await iter.hasNext()) {
         const kvPairCursor = await iter.next();
@@ -1848,8 +1837,7 @@ async function testLowLevelApi(core: Core, hasher: Hasher): Promise<void> {
     // iterate over array_list
     {
       const innerCursor = await rootCursor.readPath([new ArrayListGet(-1)]);
-      const iter = innerCursor!.iterator();
-      await iter.init();
+      const iter = await innerCursor!.iterator();
       let i = 0;
       while (await iter.hasNext()) {
         const nextCursor = await iter.next();
@@ -1871,8 +1859,7 @@ async function testLowLevelApi(core: Core, hasher: Hasher): Promise<void> {
         new WriteData(null),
       ]);
       const innerCursor = await rootCursor.readPath([new ArrayListGet(-1)]);
-      const iter = innerCursor!.iterator();
-      await iter.init();
+      const iter = await innerCursor!.iterator();
       let i = 0;
       while (await iter.hasNext()) {
         await iter.next();
@@ -1944,8 +1931,7 @@ async function testLowLevelApi(core: Core, hasher: Hasher): Promise<void> {
     // iterate over hash_map
     {
       const innerCursor = await rootCursor.readPath([new ArrayListGet(-1)]);
-      const iter = innerCursor!.iterator();
-      await iter.init();
+      const iter = await innerCursor!.iterator();
       let i = 0;
       while (await iter.hasNext()) {
         const kvPairCursor = await iter.next();
@@ -1971,14 +1957,13 @@ async function testLowLevelApi(core: Core, hasher: Hasher): Promise<void> {
         new ArrayListAppend(),
         new WriteData(await rootCursor.readPathSlot([new ArrayListGet(-1)])),
       ]);
-      const iter = (innerCursor as WriteCursor).iterator();
-      await iter.init();
+      const iter = await innerCursor.iterator();
       let i = 0;
       while (await iter.hasNext()) {
         const kvPairCursor = await iter.next();
         const kvPair = await kvPairCursor!.readKeyValuePair();
         if (arraysEqual(kvPair.hash, fooKey)) {
-          await (kvPair.keyCursor as WriteCursor).write(new Bytes('bar'));
+          await kvPair.keyCursor.write(new Bytes('bar'));
         }
         i += 1;
       }
@@ -2044,8 +2029,7 @@ async function testLowLevelApi(core: Core, hasher: Hasher): Promise<void> {
         // check all values in the new slice with an iterator
         {
           const innerCursor = await cursor.readPath([new HashMapGet(new HashMapGetValue(evenKey))]);
-          const iter = innerCursor!.iterator();
-          await iter.init();
+          const iter = await innerCursor!.iterator();
           let i = 0;
           while (await iter.hasNext()) {
             await iter.next();
@@ -2250,8 +2234,7 @@ async function testSlice(
 
       // check all values in the new slice with an iterator
       {
-        const iter = evenListSliceCursor.iterator();
-        await iter.init();
+        const iter = await evenListSliceCursor.iterator();
         let i = 0;
         while (await iter.hasNext()) {
           const numCursor = await iter.next();
@@ -2377,8 +2360,7 @@ async function testConcat(core: Core, hasher: Hasher, listASize: number, listBSi
 
       // check all values in the new slice with an iterator
       {
-        const iter = comboListCursor.iterator();
-        await iter.init();
+        const iter = await comboListCursor.iterator();
         let i = 0;
         while (await iter.hasNext()) {
           const numCursor = await iter.next();
@@ -2451,8 +2433,7 @@ async function testInsertAndRemove(core: Core, hasher: Hasher, originalSize: num
 
       // check all values in the new list with an iterator
       {
-        const iter = evenListInsertCursor.iterator();
-        await iter.init();
+        const iter = await evenListInsertCursor.iterator();
         let i = 0;
         while (await iter.hasNext()) {
           const numCursor = await iter.next();
@@ -2502,8 +2483,7 @@ async function testInsertAndRemove(core: Core, hasher: Hasher, originalSize: num
 
       // check all values in the new list with an iterator
       {
-        const iter = evenListInsertCursor.iterator();
-        await iter.init();
+        const iter = await evenListInsertCursor.iterator();
         let i = 0;
         while (await iter.hasNext()) {
           const numCursor = await iter.next();

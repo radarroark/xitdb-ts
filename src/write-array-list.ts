@@ -21,7 +21,7 @@ export class WriteArrayList extends ReadArrayList {
     return new WriteArrayList(newCursor);
   }
 
-  override iterator(): WriteCursorIterator {
+  override async iterator(): Promise<WriteCursorIterator> {
     return (this.cursor as WriteCursor).iterator();
   }
 

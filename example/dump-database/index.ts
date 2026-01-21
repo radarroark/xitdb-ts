@@ -80,8 +80,7 @@ async function toJsonValue(cursor: ReadCursor, isRoot = false): Promise<unknown>
 
     case Tag.HASH_MAP:
     case Tag.COUNTED_HASH_MAP: {
-      const iter = cursor.iterator();
-      await iter.init();
+      const iter = await cursor.iterator();
       const result: Record<string, unknown> = {};
 
       while (await iter.hasNext()) {
@@ -97,8 +96,7 @@ async function toJsonValue(cursor: ReadCursor, isRoot = false): Promise<unknown>
 
     case Tag.HASH_SET:
     case Tag.COUNTED_HASH_SET: {
-      const iter = cursor.iterator();
-      await iter.init();
+      const iter = await cursor.iterator();
       const result: (string | number)[] = [];
 
       while (await iter.hasNext()) {
@@ -114,8 +112,7 @@ async function toJsonValue(cursor: ReadCursor, isRoot = false): Promise<unknown>
 
     case Tag.LINKED_ARRAY_LIST: {
       const result: unknown[] = [];
-      const iter = cursor.iterator();
-      await iter.init();
+      const iter = await cursor.iterator();
       while (await iter.hasNext()) {
         const itemCursor = await iter.next();
         if (itemCursor) {
@@ -185,8 +182,7 @@ async function printValue(cursor: ReadCursor, indent: string): Promise<void> {
 
     case Tag.HASH_MAP:
     case Tag.COUNTED_HASH_MAP: {
-      const iter = cursor.iterator();
-      await iter.init();
+      const iter = await cursor.iterator();
       const entries: Array<{ key: string; valueCursor: ReadCursor }> = [];
 
       while (await iter.hasNext()) {
@@ -210,8 +206,7 @@ async function printValue(cursor: ReadCursor, indent: string): Promise<void> {
 
     case Tag.HASH_SET:
     case Tag.COUNTED_HASH_SET: {
-      const iter = cursor.iterator();
-      await iter.init();
+      const iter = await cursor.iterator();
       const keys: string[] = [];
 
       while (await iter.hasNext()) {
@@ -231,8 +226,7 @@ async function printValue(cursor: ReadCursor, indent: string): Promise<void> {
     case Tag.LINKED_ARRAY_LIST: {
       const count = await cursor.count();
       console.log(`${indent}LinkedArrayList[${count}]:`);
-      const iter = cursor.iterator();
-      await iter.init();
+      const iter = await cursor.iterator();
       let i = 0;
       while (await iter.hasNext()) {
         const itemCursor = await iter.next();

@@ -17,7 +17,7 @@ export class WriteHashSet extends ReadHashSet {
     return set;
   }
 
-  override iterator(): WriteCursorIterator {
+  override async iterator(): Promise<WriteCursorIterator> {
     return (this.cursor as WriteCursor).iterator();
   }
 

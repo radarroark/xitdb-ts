@@ -29,7 +29,7 @@ export class ReadHashSet implements Slotted {
     return this.cursor.slot();
   }
 
-  iterator(): CursorIterator {
+  async iterator(): Promise<CursorIterator> {
     return this.cursor.iterator();
   }
 

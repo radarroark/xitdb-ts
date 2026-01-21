@@ -270,8 +270,7 @@ export class ReadCursor implements Slotted {
   }
 
   async *[Symbol.asyncIterator](): AsyncIterator<ReadCursor> {
-    const iterator = new CursorIterator(this);
-    await iterator.init();
+    const iterator = await this.iterator();
     while (await iterator.hasNext()) {
       const next = await iterator.next();
       if (next !== null) {
@@ -280,8 +279,10 @@ export class ReadCursor implements Slotted {
     }
   }
 
-  iterator(): CursorIterator {
-    return new CursorIterator(this);
+  async iterator(): Promise<CursorIterator> {
+    const iterator = new CursorIterator(this);
+    await iterator.init();
+    return iterator;
   }
 }
 
@@ -377,16 +378,12 @@ export class CursorIterator {
   index: number = 0;
   private stack: IteratorLevel[] = [];
   private nextCursorMaybe: ReadCursor | null = null;
-  private initialized: boolean = false;
 
   constructor(cursor: ReadCursor) {
     this.cursor = cursor;
   }
 
   async init(): Promise<void> {
-    if (this.initialized) return;
-    this.initialized = true;
-
     switch (this.cursor.slotPtr.slot.tag) {
       case Tag.NONE:
         this.size = 0;
@@ -451,8 +448,6 @@ export class CursorIterator {
   }
 
   async hasNext(): Promise<boolean> {
-    await this.init();
-
     switch (this.cursor.slotPtr.slot.tag) {
       case Tag.NONE:
         return false;
@@ -474,8 +469,6 @@ export class CursorIterator {
   }
 
   async next(): Promise<ReadCursor | null> {
-    await this.init();
-
     switch (this.cursor.slotPtr.slot.tag) {
       case Tag.NONE:
         return null;

@@ -23,7 +23,7 @@ export class WriteLinkedArrayList extends ReadLinkedArrayList {
     return new WriteLinkedArrayList(newCursor);
   }
 
-  override iterator(): WriteCursorIterator {
+  override async iterator(): Promise<WriteCursorIterator> {
     return (this.cursor as WriteCursor).iterator();
   }
 

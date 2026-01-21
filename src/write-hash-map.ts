@@ -24,7 +24,7 @@ export class WriteHashMap extends ReadHashMap {
     return map;
   }
 
-  override iterator(): WriteCursorIterator {
+  override async iterator(): Promise<WriteCursorIterator> {
     return (this.cursor as WriteCursor).iterator();
   }
 

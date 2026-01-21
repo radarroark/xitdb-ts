@@ -27,7 +27,7 @@ export class ReadArrayList implements Slotted {
     return this.cursor.count();
   }
 
-  iterator(): CursorIterator {
+  async iterator(): Promise<CursorIterator> {
     return this.cursor.iterator();
   }
 
