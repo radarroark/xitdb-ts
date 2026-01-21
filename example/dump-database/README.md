@@ -4,7 +4,15 @@ A command-line tool for inspecting and dumping the contents of xitdb database fi
 
 ## Installation
 
-To install the dump-database dependencies:
+First, build the xitdb library from the root directory:
+
+```bash
+# From the xitdb-ts root directory
+bun run build
+bun run build:types
+```
+
+Then install the dump-database dependencies:
 
 ```bash
 cd example/dump-database
