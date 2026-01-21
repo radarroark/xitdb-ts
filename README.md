@@ -37,7 +37,7 @@ const db = await Database.create(core, hasher);
 
 // to get the benefits of immutability, the top-level data structure
 // must be an ArrayList, so each transaction is stored as an item in it
-const history = await WriteArrayList.create(await db.rootCursor());
+const history = await WriteArrayList.create(db.rootCursor());
 
 // this is how a transaction is executed. we call history.appendContext,
 // providing it with the most recent copy of the db and a context

@@ -305,7 +305,7 @@ async function main() {
     const hasher = new Hasher('SHA-1');
     const db = await Database.create(core, hasher);
 
-    const rootCursor = await db.rootCursor();
+    const rootCursor = db.rootCursor();
 
     if (jsonFlag) {
       const json = await toJsonValue(rootCursor, true);

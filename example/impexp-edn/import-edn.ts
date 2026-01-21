@@ -24,7 +24,7 @@ export async function importEdn(ednPath: string, dbPath: string): Promise<void> 
 
   const core = await CoreBufferedFile.create(dbPath);
   const db = await Database.create(core, new Hasher('SHA-1'));
-  const rootCursor = await db.rootCursor();
+  const rootCursor = db.rootCursor();
   const history = await WriteArrayList.create(rootCursor);
 
   await history.appendContext(null, async (cursor) => {

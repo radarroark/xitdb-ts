@@ -96,7 +96,7 @@ describe('Database High Level API', () => {
     const hasher = new Hasher('SHA-1');
     const db = await Database.create(core, hasher);
 
-    const map = await WriteHashMap.create(await db.rootCursor());
+    const map = await WriteHashMap.create(db.rootCursor());
     await map.putByString('foo', new Bytes('foo'));
     await map.putByString('bar', new Bytes('bar'));
 
@@ -118,7 +118,7 @@ describe('Database High Level API', () => {
     const hasher = new Hasher('SHA-1');
     const db = await Database.create(core, hasher);
 
-    await expect(WriteLinkedArrayList.create(await db.rootCursor())).rejects.toThrow(
+    await expect(WriteLinkedArrayList.create(db.rootCursor())).rejects.toThrow(
       InvalidTopLevelTypeException
     );
   });
@@ -128,7 +128,7 @@ describe('Database High Level API', () => {
     using core = await CoreFile.create(filePath);
     const hasher = new Hasher('SHA-1');
     const db = await Database.create(core, hasher);
-    const history = new ReadArrayList(await db.rootCursor());
+    const history = new ReadArrayList(db.rootCursor());
 
     // First moment
     {
@@ -324,7 +324,7 @@ describe('Database High Level API', () => {
     const hasher = new Hasher('SHA-1');
     const db = await Database.create(core, hasher);
 
-    const map = await WriteHashMap.create(await db.rootCursor());
+    const map = await WriteHashMap.create(db.rootCursor());
     const textCursor = await map.putCursorByString('text');
 
     const writer = await textCursor.writer();
@@ -380,7 +380,7 @@ async function testHighLevelApi(core: Core, hasher: Hasher, filePath: string | n
 
   // First transaction
   {
-    const history = await WriteArrayList.create(await db.rootCursor());
+    const history = await WriteArrayList.create(db.rootCursor());
     await history.appendContext(await history.getSlot(-1), async (cursor) => {
       const moment = await WriteHashMap.create(cursor);
 
@@ -600,7 +600,7 @@ async function testHighLevelApi(core: Core, hasher: Hasher, filePath: string | n
 
   // Second transaction - modify data
   {
-    const history = await WriteArrayList.create(await db.rootCursor());
+    const history = await WriteArrayList.create(db.rootCursor());
     await history.appendContext(await history.getSlot(-1), async (cursor) => {
       const moment = await WriteHashMap.create(cursor);
 
@@ -695,7 +695,7 @@ async function testHighLevelApi(core: Core, hasher: Hasher, filePath: string | n
 
   // The old data hasn't changed
   {
-    const history = await WriteArrayList.create(await db.rootCursor());
+    const history = await WriteArrayList.create(db.rootCursor());
     const momentCursor = await history.getCursor(0);
     const moment = await ReadHashMap.create(momentCursor!);
 
@@ -734,7 +734,7 @@ async function testHighLevelApi(core: Core, hasher: Hasher, filePath: string | n
 
   // Remove the last transaction with slice
   {
-    const history = await WriteArrayList.create(await db.rootCursor());
+    const history = await WriteArrayList.create(db.rootCursor());
     await history.slice(1);
 
     const momentCursor = await history.getCursor(-1);
@@ -789,7 +789,7 @@ async function testHighLevelApi(core: Core, hasher: Hasher, filePath: string | n
 
   // Cloning
   {
-    const history = await WriteArrayList.create(await db.rootCursor());
+    const history = await WriteArrayList.create(db.rootCursor());
     await history.appendContext(await history.getSlot(-1), async (cursor) => {
       const moment = await WriteHashMap.create(cursor);
 
@@ -822,7 +822,7 @@ async function testHighLevelApi(core: Core, hasher: Hasher, filePath: string | n
 
   // Accidental mutation when cloning inside a transaction
   {
-    const history = await WriteArrayList.create(await db.rootCursor());
+    const history = await WriteArrayList.create(db.rootCursor());
     const historyIndex = (await history.count()) - 1;
 
     await history.appendContext(await history.getSlot(-1), async (cursor) => {
@@ -861,7 +861,7 @@ async function testHighLevelApi(core: Core, hasher: Hasher, filePath: string | n
 
   // Preventing accidental mutation with freezing
   {
-    const history = await WriteArrayList.create(await db.rootCursor());
+    const history = await WriteArrayList.create(db.rootCursor());
     await history.appendContext(await history.getSlot(-1), async (cursor) => {
       const moment = await WriteHashMap.create(cursor);
 
@@ -942,7 +942,7 @@ async function testLowLevelApi(core: Core, hasher: Hasher): Promise<void> {
   {
     await core.setLength(0);
     const db = await Database.create(core, hasher);
-    const rootCursor = await db.rootCursor();
+    const rootCursor = db.rootCursor();
 
     // write foo -> bar with a writer
     const fooKey = await db.hasher.digest(new TextEncoder().encode('foo'));
@@ -1641,7 +1641,7 @@ async function testLowLevelApi(core: Core, hasher: Hasher): Promise<void> {
   {
     await core.setLength(0);
     const db = await Database.create(core, hasher);
-    const rootCursor = await db.rootCursor();
+    const rootCursor = db.rootCursor();
 
     const watKey = await db.hasher.digest(new TextEncoder().encode('wat'));
 
@@ -1728,7 +1728,7 @@ async function testLowLevelApi(core: Core, hasher: Hasher): Promise<void> {
   {
     await core.setLength(0);
     const db = await Database.create(core, hasher);
-    const rootCursor = await db.rootCursor();
+    const rootCursor = db.rootCursor();
 
     for (let i = 0; i < SLOT_COUNT + 1; i++) {
       const value = `wat${i}`;
@@ -1815,7 +1815,7 @@ async function testLowLevelApi(core: Core, hasher: Hasher): Promise<void> {
   {
     await core.setLength(0);
     const db = await Database.create(core, hasher);
-    const rootCursor = await db.rootCursor();
+    const rootCursor = db.rootCursor();
 
     // add wats
     for (let i = 0; i < 10; i++) {
@@ -1877,7 +1877,7 @@ async function testLowLevelApi(core: Core, hasher: Hasher): Promise<void> {
   {
     await core.setLength(0);
     const db = await Database.create(core, hasher);
-    const rootCursor = await db.rootCursor();
+    const rootCursor = db.rootCursor();
 
     // add wats
     for (let i = 0; i < 10; i++) {
@@ -2000,7 +2000,7 @@ async function testLowLevelApi(core: Core, hasher: Hasher): Promise<void> {
   {
     await core.setLength(0);
     const db = await Database.create(core, hasher);
-    const rootCursor = await db.rootCursor();
+    const rootCursor = db.rootCursor();
 
     const evenKey = await db.hasher.digest(new TextEncoder().encode('even'));
     const comboKey = await db.hasher.digest(new TextEncoder().encode('combo'));
@@ -2080,7 +2080,7 @@ async function testLowLevelApi(core: Core, hasher: Hasher): Promise<void> {
   {
     await core.setLength(0);
     const db = await Database.create(core, hasher);
-    const rootCursor = await db.rootCursor();
+    const rootCursor = db.rootCursor();
 
     // appending without setting any value should work
     for (let i = 0; i < 8; i++) {
@@ -2110,7 +2110,7 @@ async function testLowLevelApi(core: Core, hasher: Hasher): Promise<void> {
   {
     await core.setLength(0);
     const db = await Database.create(core, hasher);
-    const rootCursor = await db.rootCursor();
+    const rootCursor = db.rootCursor();
 
     await rootCursor.writePath([
       new ArrayListInit(),
@@ -2137,7 +2137,7 @@ async function testLowLevelApi(core: Core, hasher: Hasher): Promise<void> {
   {
     await core.setLength(0);
     const db = await Database.create(core, hasher);
-    const rootCursor = await db.rootCursor();
+    const rootCursor = db.rootCursor();
 
     await rootCursor.writePath([
       new ArrayListInit(),
@@ -2188,7 +2188,7 @@ async function testSlice(
 ): Promise<void> {
   await core.setLength(0);
   const db = await Database.create(core, hasher);
-  const rootCursor = await db.rootCursor();
+  const rootCursor = db.rootCursor();
 
   const evenKey = await db.hasher.digest(new TextEncoder().encode('even'));
   const evenSliceKey = await db.hasher.digest(new TextEncoder().encode('even-slice'));
@@ -2288,7 +2288,7 @@ async function testSlice(
 async function testConcat(core: Core, hasher: Hasher, listASize: number, listBSize: number): Promise<void> {
   await core.setLength(0);
   const db = await Database.create(core, hasher);
-  const rootCursor = await db.rootCursor();
+  const rootCursor = db.rootCursor();
 
   const evenKey = await db.hasher.digest(new TextEncoder().encode('even'));
   const oddKey = await db.hasher.digest(new TextEncoder().encode('odd'));
@@ -2381,7 +2381,7 @@ async function testConcat(core: Core, hasher: Hasher, listASize: number, listBSi
 async function testInsertAndRemove(core: Core, hasher: Hasher, originalSize: number, insertIndex: number): Promise<void> {
   await core.setLength(0);
   const db = await Database.create(core, hasher);
-  const rootCursor = await db.rootCursor();
+  const rootCursor = db.rootCursor();
 
   const evenKey = await db.hasher.digest(new TextEncoder().encode('even'));
   const evenInsertKey = await db.hasher.digest(new TextEncoder().encode('even-insert'));

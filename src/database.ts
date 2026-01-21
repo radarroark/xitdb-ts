@@ -24,6 +24,7 @@ import {
   MaxShiftExceededException,
 } from './exceptions';
 import { Bytes, Float, Int, Uint, type WriteableData } from './writeable-data';
+import { WriteCursor } from './write-cursor';
 
 export const VERSION = 0;
 export const MAGIC_NUMBER = new Uint8Array([0x78, 0x69, 0x74]); // 'xit'
@@ -1077,8 +1078,6 @@ export class WriteData implements PathPartBase {
         const longValue = view.getBigInt64(0, false);
         slot = new Slot(longValue, Tag.SHORT_BYTES, data.formatTag !== null);
       } else {
-        // Import WriteCursor dynamically to avoid circular dependency
-        const { WriteCursor } = await import('./write-cursor');
         const nextCursor = new WriteCursor(slotPtr, db);
         const cursorWriter = await nextCursor.writer();
         cursorWriter.formatTag = data.formatTag;
@@ -1117,7 +1116,6 @@ export class Context implements PathPartBase {
     if (writeMode === WriteMode.READ_ONLY) throw new WriteNotAllowedException();
     if (pathI !== path.length - 1) throw new PathPartMustBeAtEndException();
 
-    const { WriteCursor } = await import('./write-cursor');
     const nextCursor = new WriteCursor(slotPtr, db);
     try {
       await this.fn(nextCursor);
@@ -1202,14 +1200,7 @@ export class Database {
     return db;
   }
 
-  async rootCursor(): Promise<any> {
-    // Import WriteCursor dynamically to avoid circular dependency
-    const { WriteCursor } = await import('./write-cursor');
-
-    if (this.header.tag === Tag.NONE) {
-      await this.core.seek(0);
-      this.header = await Header.read(this.core);
-    }
+  rootCursor(): WriteCursor {
     return new WriteCursor(
       new SlotPointer(null, new Slot(Header.LENGTH, this.header.tag)),
       this
@@ -1227,7 +1218,7 @@ export class Database {
   async truncate(): Promise<void> {
     if (this.header.tag !== Tag.ARRAY_LIST) return;
 
-    const rootCursor = await this.rootCursor();
+    const rootCursor = this.rootCursor();
     const listSize = await rootCursor.count();
 
     if (listSize === 0) return;

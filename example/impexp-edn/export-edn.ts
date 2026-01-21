@@ -16,7 +16,7 @@ const FORMAT_TAG_BOOLEAN = 'bl';
 export async function exportEdn(dbPath: string): Promise<void> {
   const core = await CoreBufferedFile.create(dbPath);
   const db = await Database.create(core, new Hasher('SHA-1'));
-  const rootCursor = await db.rootCursor();
+  const rootCursor = db.rootCursor();
 
   const history = new ReadArrayList(rootCursor);
   const count = await history.count();
