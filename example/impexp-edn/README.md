@@ -4,15 +4,7 @@ A command-line tool for importing EDN (Extensible Data Notation) files into xitd
 
 ## Installation
 
-First, build the xitdb library from the root directory:
-
-```bash
-# From the xitdb-ts root directory
-bun run build
-bun run build:types
-```
-
-Then install the impexp-edn dependencies:
+To install the impexp-edn dependencies:
 
 ```bash
 cd example/impexp-edn
