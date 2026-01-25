@@ -3,21 +3,22 @@ import { InvalidFormatTagSizeException } from './exceptions';
 export interface WriteableData {}
 
 export class Uint implements WriteableData {
-  readonly value: number;
+  readonly value: bigint;
 
-  constructor(value: number) {
-    if (value < 0) {
+  constructor(value: number | bigint) {
+    const bigintValue = BigInt(value);
+    if (bigintValue < 0n) {
       throw new Error('Uint must not be negative');
     }
-    this.value = value;
+    this.value = bigintValue;
   }
 }
 
 export class Int implements WriteableData {
-  readonly value: number;
+  readonly value: bigint;
 
-  constructor(value: number) {
-    this.value = value;
+  constructor(value: number | bigint) {
+    this.value = BigInt(value);
   }
 }
 
