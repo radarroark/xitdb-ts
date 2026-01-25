@@ -29,3 +29,5 @@ export class ExpectedRootNodeException extends DatabaseException {}
 export class InvalidFormatTagSizeException extends DatabaseException {}
 export class UnexpectedWriterPositionException extends DatabaseException {}
 export class MaxShiftExceededException extends DatabaseException {}
+export class Uint64OverflowException extends DatabaseException {}
+export class Int64OverflowException extends DatabaseException {}

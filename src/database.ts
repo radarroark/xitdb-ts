@@ -1054,9 +1054,6 @@ export class WriteData implements PathPartBase {
     } else if (data instanceof Slot) {
       slot = data;
     } else if (data instanceof Uint) {
-      if (data.value < 0) {
-        throw new Error('Uint must not be negative');
-      }
       slot = new Slot(data.value, Tag.UINT);
     } else if (data instanceof Int) {
       slot = new Slot(data.value, Tag.INT);

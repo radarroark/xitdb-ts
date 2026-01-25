@@ -1,14 +1,18 @@
-import { InvalidFormatTagSizeException } from './exceptions';
+import { InvalidFormatTagSizeException, Uint64OverflowException, Int64OverflowException } from './exceptions';
 
 export interface WriteableData {}
+
+const UINT64_MAX = 2n ** 64n - 1n;
+const INT64_MIN = -(2n ** 63n);
+const INT64_MAX = 2n ** 63n - 1n;
 
 export class Uint implements WriteableData {
   readonly value: bigint;
 
   constructor(value: number | bigint) {
     const bigintValue = BigInt(value);
-    if (bigintValue < 0n) {
-      throw new Error('Uint must not be negative');
+    if (bigintValue < 0n || bigintValue > UINT64_MAX) {
+      throw new Uint64OverflowException();
     }
     this.value = bigintValue;
   }
@@ -18,7 +22,11 @@ export class Int implements WriteableData {
   readonly value: bigint;
 
   constructor(value: number | bigint) {
-    this.value = BigInt(value);
+    const bigintValue = BigInt(value);
+    if (bigintValue < INT64_MIN || bigintValue > INT64_MAX) {
+      throw new Int64OverflowException();
+    }
+    this.value = bigintValue;
   }
 }
 
