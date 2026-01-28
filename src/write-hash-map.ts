@@ -32,90 +32,66 @@ export class WriteHashMap extends ReadHashMap {
     yield* this.cursor as WriteCursor;
   }
 
-  // Methods that take a string key and hash it
-  async putByString(key: string, data: WriteableData): Promise<void> {
-    const hash = await this.cursor.db.hasher.digest(new TextEncoder().encode(key));
-    await this.putKey(hash, new Bytes(key));
-    await this.put(hash, data);
+  // put overloads
+  async put(key: string, data: WriteableData): Promise<void>;
+  async put(key: Bytes, data: WriteableData): Promise<void>;
+  async put(hash: Uint8Array, data: WriteableData): Promise<void>;
+  async put(key: string | Bytes | Uint8Array, data: WriteableData): Promise<void> {
+    if (typeof key === 'string') {
+      const hash = await this.cursor.db.hasher.digest(new TextEncoder().encode(key));
+      await this.putKeyInternal(hash, new Bytes(key));
+      await this.putInternal(hash, data);
+    } else if (key instanceof Bytes) {
+      const hash = await this.cursor.db.hasher.digest(key.value);
+      await this.putKeyInternal(hash, key);
+      await this.putInternal(hash, data);
+    } else {
+      await this.putInternal(key, data);
+    }
   }
 
-  async putCursorByString(key: string): Promise<WriteCursor> {
-    const hash = await this.cursor.db.hasher.digest(new TextEncoder().encode(key));
-    await this.putKey(hash, new Bytes(key));
-    return this.putCursor(hash);
+  // putCursor overloads
+  async putCursor(key: string): Promise<WriteCursor>;
+  async putCursor(key: Bytes): Promise<WriteCursor>;
+  async putCursor(hash: Uint8Array): Promise<WriteCursor>;
+  async putCursor(key: string | Bytes | Uint8Array): Promise<WriteCursor> {
+    if (typeof key === 'string') {
+      const hash = await this.cursor.db.hasher.digest(new TextEncoder().encode(key));
+      await this.putKeyInternal(hash, new Bytes(key));
+      return this.putCursorInternal(hash);
+    } else if (key instanceof Bytes) {
+      const hash = await this.cursor.db.hasher.digest(key.value);
+      await this.putKeyInternal(hash, key);
+      return this.putCursorInternal(hash);
+    } else {
+      return this.putCursorInternal(key);
+    }
   }
 
-  async putKeyByString(key: string, data: WriteableData): Promise<void> {
-    const hash = await this.cursor.db.hasher.digest(new TextEncoder().encode(key));
-    await this.putKey(hash, data);
+  // putKey overloads
+  async putKey(key: string, data: WriteableData): Promise<void>;
+  async putKey(key: Bytes, data: WriteableData): Promise<void>;
+  async putKey(hash: Uint8Array, data: WriteableData): Promise<void>;
+  async putKey(key: string | Bytes | Uint8Array, data: WriteableData): Promise<void> {
+    const hash = await this.resolveHash(key);
+    await this.putKeyInternal(hash, data);
   }
 
-  async putKeyCursorByString(key: string): Promise<WriteCursor> {
-    const hash = await this.cursor.db.hasher.digest(new TextEncoder().encode(key));
-    return this.putKeyCursor(hash);
+  // putKeyCursor overloads
+  async putKeyCursor(key: string): Promise<WriteCursor>;
+  async putKeyCursor(key: Bytes): Promise<WriteCursor>;
+  async putKeyCursor(hash: Uint8Array): Promise<WriteCursor>;
+  async putKeyCursor(key: string | Bytes | Uint8Array): Promise<WriteCursor> {
+    const hash = await this.resolveHash(key);
+    return this.putKeyCursorInternal(hash);
   }
 
-  async removeByString(key: string): Promise<boolean> {
-    const hash = await this.cursor.db.hasher.digest(new TextEncoder().encode(key));
-    return this.remove(hash);
-  }
-
-  // Methods that take Bytes key and hash it
-  async putByBytes(key: Bytes, data: WriteableData): Promise<void> {
-    const hash = await this.cursor.db.hasher.digest(key.value);
-    await this.putKey(hash, key);
-    await this.put(hash, data);
-  }
-
-  async putCursorByBytes(key: Bytes): Promise<WriteCursor> {
-    const hash = await this.cursor.db.hasher.digest(key.value);
-    await this.putKey(hash, key);
-    return this.putCursor(hash);
-  }
-
-  async putKeyByBytes(key: Bytes, data: WriteableData): Promise<void> {
-    const hash = await this.cursor.db.hasher.digest(key.value);
-    await this.putKey(hash, data);
-  }
-
-  async putKeyCursorByBytes(key: Bytes): Promise<WriteCursor> {
-    const hash = await this.cursor.db.hasher.digest(key.value);
-    return this.putKeyCursor(hash);
-  }
-
-  async removeByBytes(key: Bytes): Promise<boolean> {
-    const hash = await this.cursor.db.hasher.digest(key.value);
-    return this.remove(hash);
-  }
-
-  // Methods that take hash directly
-  async put(hash: Uint8Array, data: WriteableData): Promise<void> {
-    await (this.cursor as WriteCursor).writePath([
-      new HashMapGet(new HashMapGetValue(hash)),
-      new WriteData(data),
-    ]);
-  }
-
-  async putCursor(hash: Uint8Array): Promise<WriteCursor> {
-    return (this.cursor as WriteCursor).writePath([
-      new HashMapGet(new HashMapGetValue(hash)),
-    ]);
-  }
-
-  async putKey(hash: Uint8Array, data: WriteableData): Promise<void> {
-    const cursor = await (this.cursor as WriteCursor).writePath([
-      new HashMapGet(new HashMapGetKey(hash)),
-    ]);
-    await cursor.writeIfEmpty(data);
-  }
-
-  async putKeyCursor(hash: Uint8Array): Promise<WriteCursor> {
-    return (this.cursor as WriteCursor).writePath([
-      new HashMapGet(new HashMapGetKey(hash)),
-    ]);
-  }
-
-  async remove(hash: Uint8Array): Promise<boolean> {
+  // remove overloads
+  async remove(key: string): Promise<boolean>;
+  async remove(key: Bytes): Promise<boolean>;
+  async remove(hash: Uint8Array): Promise<boolean>;
+  async remove(key: string | Bytes | Uint8Array): Promise<boolean> {
+    const hash = await this.resolveHash(key);
     try {
       await (this.cursor as WriteCursor).writePath([new HashMapRemove(hash)]);
     } catch (e) {
@@ -125,5 +101,32 @@ export class WriteHashMap extends ReadHashMap {
       throw e;
     }
     return true;
+  }
+
+  // Internal methods that take hash directly
+  private async putInternal(hash: Uint8Array, data: WriteableData): Promise<void> {
+    await (this.cursor as WriteCursor).writePath([
+      new HashMapGet(new HashMapGetValue(hash)),
+      new WriteData(data),
+    ]);
+  }
+
+  private async putCursorInternal(hash: Uint8Array): Promise<WriteCursor> {
+    return (this.cursor as WriteCursor).writePath([
+      new HashMapGet(new HashMapGetValue(hash)),
+    ]);
+  }
+
+  private async putKeyInternal(hash: Uint8Array, data: WriteableData): Promise<void> {
+    const cursor = await (this.cursor as WriteCursor).writePath([
+      new HashMapGet(new HashMapGetKey(hash)),
+    ]);
+    await cursor.writeIfEmpty(data);
+  }
+
+  private async putKeyCursorInternal(hash: Uint8Array): Promise<WriteCursor> {
+    return (this.cursor as WriteCursor).writePath([
+      new HashMapGet(new HashMapGetKey(hash)),
+    ]);
   }
 }

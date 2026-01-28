@@ -59,27 +59,27 @@ const history = await WriteArrayList.create(db.rootCursor());
 await history.appendContext(await history.getSlot(-1), async (cursor) => {
   const moment = await WriteHashMap.create(cursor);
 
-  await moment.putByString('foo', new Bytes('foo'));
-  await moment.putByString('bar', new Bytes('bar'));
+  await moment.put('foo', new Bytes('foo'));
+  await moment.put('bar', new Bytes('bar'));
 
-  const fruitsCursor = await moment.putCursorByString('fruits');
+  const fruitsCursor = await moment.putCursor('fruits');
   const fruits = await WriteArrayList.create(fruitsCursor);
   await fruits.append(new Bytes('apple'));
   await fruits.append(new Bytes('pear'));
   await fruits.append(new Bytes('grape'));
 
-  const peopleCursor = await moment.putCursorByString('people');
+  const peopleCursor = await moment.putCursor('people');
   const people = await WriteArrayList.create(peopleCursor);
 
   const aliceCursor = await people.appendCursor();
   const alice = await WriteHashMap.create(aliceCursor);
-  await alice.putByString('name', new Bytes('Alice'));
-  await alice.putByString('age', new Uint(25));
+  await alice.put('name', new Bytes('Alice'));
+  await alice.put('age', new Uint(25));
 
   const bobCursor = await people.appendCursor();
   const bob = await WriteHashMap.create(bobCursor);
-  await bob.putByString('name', new Bytes('Bob'));
-  await bob.putByString('age', new Uint(42));
+  await bob.put('name', new Bytes('Bob'));
+  await bob.put('age', new Uint(42));
 });
 
 // get the most recent copy of the database, like a moment
@@ -89,13 +89,13 @@ const moment = await ReadHashMap.create(momentCursor!);
 
 // we can read the value of "foo" from the map by getting
 // the cursor to "foo" and then calling readBytes on it
-const fooCursor = await moment.getCursorByString('foo');
+const fooCursor = await moment.getCursor('foo');
 const fooValue = await fooCursor!.readBytes(MAX_READ_BYTES);
 expect(new TextDecoder().decode(fooValue)).toBe('foo');
 
 // to get the "fruits" list, we get the cursor to it and
 // then pass it to the ReadArrayList constructor
-const fruitsCursor = await moment.getCursorByString('fruits');
+const fruitsCursor = await moment.getCursor('fruits');
 const fruits = new ReadArrayList(fruitsCursor!);
 expect(await fruits.count()).toBe(3);
 
@@ -143,13 +143,13 @@ In xitdb, you can optionally store a format tag with a byte array. A format tag 
 ```typescript
 const randomBytes = new Uint8Array(32);
 crypto.getRandomValues(randomBytes);
-await moment.putByString('random-number', new Bytes(randomBytes, new TextEncoder().encode('bi')));
+await moment.put('random-number', new Bytes(randomBytes, new TextEncoder().encode('bi')));
 ```
 
 Then, you can read it like this:
 
 ```typescript
-const randomNumberCursor = await moment.getCursorByString('random-number');
+const randomNumberCursor = await moment.getCursor('random-number');
 const randomNumber = await randomNumberCursor!.readBytesObject(MAX_READ_BYTES);
 expect(new TextDecoder().decode(randomNumber.formatTag!)).toBe('bi');
 const randomBigInt = randomNumber.value;
@@ -165,12 +165,12 @@ A powerful feature of immutable data is fast cloning. Any data structure can be 
 await history.appendContext(await history.getSlot(-1), async (cursor) => {
   const moment = await WriteHashMap.create(cursor);
 
-  const fruitsCursor = await moment.getCursorByString('fruits');
+  const fruitsCursor = await moment.getCursor('fruits');
   const fruits = new ReadArrayList(fruitsCursor!);
 
   // create a new key called "food" whose initial value is
   // based on the "fruits" list
-  const foodCursor = await moment.putCursorByString('food');
+  const foodCursor = await moment.putCursor('food');
   await foodCursor.write(fruits.slot());
 
   const food = await WriteArrayList.create(foodCursor);
@@ -183,12 +183,12 @@ const momentCursor = await history.getCursor(-1);
 const moment = await ReadHashMap.create(momentCursor!);
 
 // the food list includes the fruits
-const foodCursor = await moment.getCursorByString('food');
+const foodCursor = await moment.getCursor('food');
 const food = new ReadArrayList(foodCursor!);
 expect(await food.count()).toBe(6);
 
 // ...but the fruits list hasn't been changed
-const fruitsCursor = await moment.getCursorByString('fruits');
+const fruitsCursor = await moment.getCursor('fruits');
 const fruits = new ReadArrayList(fruitsCursor!);
 expect(await fruits.count()).toBe(3);
 ```
@@ -205,14 +205,14 @@ There's one catch you'll run into when cloning. If we try cloning a data structu
 await history.appendContext(await history.getSlot(-1), async (cursor) => {
   const moment = await WriteHashMap.create(cursor);
 
-  const bigCitiesCursor = await moment.putCursorByString('big-cities');
+  const bigCitiesCursor = await moment.putCursor('big-cities');
   const bigCities = await WriteArrayList.create(bigCitiesCursor);
   await bigCities.append(new Bytes('New York, NY'));
   await bigCities.append(new Bytes('Los Angeles, CA'));
 
   // create a new key called "cities" whose initial value is
   // based on the "big-cities" list
-  const citiesCursor = await moment.putCursorByString('cities');
+  const citiesCursor = await moment.putCursor('cities');
   await citiesCursor.write(bigCities.slot());
 
   const cities = await WriteArrayList.create(citiesCursor);
@@ -224,12 +224,12 @@ const momentCursor = await history.getCursor(-1);
 const moment = await ReadHashMap.create(momentCursor!);
 
 // the cities list contains all four
-const citiesCursor = await moment.getCursorByString('cities');
+const citiesCursor = await moment.getCursor('cities');
 const cities = new ReadArrayList(citiesCursor!);
 expect(await cities.count()).toBe(4);
 
 // ..but so does big-cities! we did not intend to mutate this
-const bigCitiesCursor = await moment.getCursorByString('big-cities');
+const bigCitiesCursor = await moment.getCursor('big-cities');
 const bigCities = new ReadArrayList(bigCitiesCursor!);
 expect(await bigCities.count()).toBe(4);
 ```
@@ -248,7 +248,7 @@ This time, after making the "big cities" list, we call `freeze`, which tells xit
 await history.appendContext(await history.getSlot(-1), async (cursor) => {
   const moment = await WriteHashMap.create(cursor);
 
-  const bigCitiesCursor = await moment.putCursorByString('big-cities');
+  const bigCitiesCursor = await moment.putCursor('big-cities');
   const bigCities = await WriteArrayList.create(bigCitiesCursor);
   await bigCities.append(new Bytes('New York, NY'));
   await bigCities.append(new Bytes('Los Angeles, CA'));
@@ -258,7 +258,7 @@ await history.appendContext(await history.getSlot(-1), async (cursor) => {
 
   // create a new key called "cities" whose initial value is
   // based on the "big-cities" list
-  const citiesCursor = await moment.putCursorByString('cities');
+  const citiesCursor = await moment.putCursor('cities');
   await citiesCursor.write(bigCities.slot());
 
   const cities = await WriteArrayList.create(citiesCursor);
@@ -270,12 +270,12 @@ const momentCursor = await history.getCursor(-1);
 const moment = await ReadHashMap.create(momentCursor!);
 
 // the cities list contains all four
-const citiesCursor = await moment.getCursorByString('cities');
+const citiesCursor = await moment.getCursor('cities');
 const cities = new ReadArrayList(citiesCursor!);
 expect(await cities.count()).toBe(4);
 
 // and big-cities only contains the original two
-const bigCitiesCursor = await moment.getCursorByString('big-cities');
+const bigCitiesCursor = await moment.getCursor('big-cities');
 const bigCities = new ReadArrayList(bigCitiesCursor!);
 expect(await bigCities.count()).toBe(2);
 ```
@@ -285,7 +285,7 @@ expect(await bigCities.count()).toBe(2);
 When reading and writing large byte arrays, you probably don't want to have all of their contents in memory at once. To incrementally write to a byte array, just get a writer from a cursor:
 
 ```typescript
-const longTextCursor = await moment.putCursorByString('long-text');
+const longTextCursor = await moment.putCursor('long-text');
 const cursorWriter = await longTextCursor.writer();
 for (let i = 0; i < 50; i++) {
   await cursorWriter.write(new TextEncoder().encode('hello, world\n'));
@@ -298,7 +298,7 @@ If you need to set a format tag for the byte array, put it in the `formatTag` fi
 To read a byte array incrementally, get a reader from a cursor:
 
 ```typescript
-const longTextCursor = await moment.getCursorByString('long-text');
+const longTextCursor = await moment.getCursor('long-text');
 const cursorReader = await longTextCursor!.reader();
 let lineCount = 0, line: number[] = [];
 const buf = new Uint8Array(1024);
@@ -317,7 +317,7 @@ expect(lineCount).toBe(50);
 All data structures support iteration. Here's an example of iterating over an `ArrayList` and printing all of the keys and values of each `HashMap` contained in it:
 
 ```typescript
-const peopleCursor = await moment.getCursorByString('people');
+const peopleCursor = await moment.getCursor('people');
 const people = new ReadArrayList(peopleCursor!);
 
 const peopleIter = await people.iterator();
@@ -356,7 +356,7 @@ The iteration of the `HashMap` looks the same with `HashSet`, `CountedHashMap`, 
 
 ## Hashing
 
-The hashing data structures will create the hash for you when you call methods like `putByString` or `getCursorByString` and provide the key as a string. If you want to do the hashing yourself, there are methods like `put` and `getCursor` that take a `Uint8Array` as the key, which should be the hash that you computed.
+The hashing data structures will create the hash for you when you call methods like `put` or `getCursor` and provide the key as a string or `Bytes`. If you want to do the hashing yourself, there is an overload of those methods that take a `Uint8Array` as the key, which should be the hash that you computed.
 
 When initializing a database, you tell xitdb how to hash with the `Hasher`. If you're using SHA-1, it will look like this:
 

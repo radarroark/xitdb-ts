@@ -25,54 +25,38 @@ export class WriteHashSet extends ReadHashSet {
     yield* this.cursor as WriteCursor;
   }
 
-  // Methods that take a string key and hash it
-  async putByString(key: string): Promise<void> {
-    const bytes = new TextEncoder().encode(key);
-    const hash = await this.cursor.db.hasher.digest(bytes);
-    await this.put(hash, new Bytes(bytes));
+  // put overloads (for sets, put takes only the key)
+  async put(key: string): Promise<void>;
+  async put(key: Bytes): Promise<void>;
+  async put(hash: Uint8Array, data: WriteableData): Promise<void>;
+  async put(key: string | Bytes | Uint8Array, data?: WriteableData): Promise<void> {
+    if (typeof key === 'string') {
+      const bytes = new TextEncoder().encode(key);
+      const hash = await this.cursor.db.hasher.digest(bytes);
+      await this.putInternal(hash, new Bytes(bytes));
+    } else if (key instanceof Bytes) {
+      const hash = await this.cursor.db.hasher.digest(key.value);
+      await this.putInternal(hash, key);
+    } else {
+      await this.putInternal(key, data!);
+    }
   }
 
-  async putCursorByString(key: string): Promise<WriteCursor> {
-    const hash = await this.cursor.db.hasher.digest(new TextEncoder().encode(key));
-    return this.putCursor(hash);
+  // putCursor overloads
+  async putCursor(key: string): Promise<WriteCursor>;
+  async putCursor(key: Bytes): Promise<WriteCursor>;
+  async putCursor(hash: Uint8Array): Promise<WriteCursor>;
+  async putCursor(key: string | Bytes | Uint8Array): Promise<WriteCursor> {
+    const hash = await this.resolveHash(key);
+    return this.putCursorInternal(hash);
   }
 
-  async removeByString(key: string): Promise<boolean> {
-    const hash = await this.cursor.db.hasher.digest(new TextEncoder().encode(key));
-    return this.remove(hash);
-  }
-
-  // Methods that take Bytes key and hash it
-  async putByBytes(key: Bytes): Promise<void> {
-    const hash = await this.cursor.db.hasher.digest(key.value);
-    await this.put(hash, key);
-  }
-
-  async putCursorByBytes(key: Bytes): Promise<WriteCursor> {
-    const hash = await this.cursor.db.hasher.digest(key.value);
-    return this.putCursor(hash);
-  }
-
-  async removeByBytes(key: Bytes): Promise<boolean> {
-    const hash = await this.cursor.db.hasher.digest(key.value);
-    return this.remove(hash);
-  }
-
-  // Methods that take hash directly
-  async put(hash: Uint8Array, data: WriteableData): Promise<void> {
-    const cursor = await (this.cursor as WriteCursor).writePath([
-      new HashMapGet(new HashMapGetKey(hash)),
-    ]);
-    await cursor.writeIfEmpty(data);
-  }
-
-  async putCursor(hash: Uint8Array): Promise<WriteCursor> {
-    return (this.cursor as WriteCursor).writePath([
-      new HashMapGet(new HashMapGetKey(hash)),
-    ]);
-  }
-
-  async remove(hash: Uint8Array): Promise<boolean> {
+  // remove overloads
+  async remove(key: string): Promise<boolean>;
+  async remove(key: Bytes): Promise<boolean>;
+  async remove(hash: Uint8Array): Promise<boolean>;
+  async remove(key: string | Bytes | Uint8Array): Promise<boolean> {
+    const hash = await this.resolveHash(key);
     try {
       await (this.cursor as WriteCursor).writePath([new HashMapRemove(hash)]);
     } catch (e) {
@@ -82,5 +66,19 @@ export class WriteHashSet extends ReadHashSet {
       throw e;
     }
     return true;
+  }
+
+  // Internal methods that take hash directly
+  private async putInternal(hash: Uint8Array, data: WriteableData): Promise<void> {
+    const cursor = await (this.cursor as WriteCursor).writePath([
+      new HashMapGet(new HashMapGetKey(hash)),
+    ]);
+    await cursor.writeIfEmpty(data);
+  }
+
+  private async putCursorInternal(hash: Uint8Array): Promise<WriteCursor> {
+    return (this.cursor as WriteCursor).writePath([
+      new HashMapGet(new HashMapGetKey(hash)),
+    ]);
   }
 }

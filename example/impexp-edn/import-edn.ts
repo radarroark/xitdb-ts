@@ -133,7 +133,7 @@ async function writeEdnValue(cursor: WriteCursor, value: EDNVal): Promise<void> 
     const set = await WriteHashSet.create(cursor);
     for (const element of value.set) {
       const elementBytes = ednValueToBytes(element);
-      const elementCursor = await set.putCursorByBytes(elementBytes);
+      const elementCursor = await set.putCursor(elementBytes);
       await writeEdnValue(elementCursor, element);
     }
     return;
@@ -144,8 +144,8 @@ async function writeEdnValue(cursor: WriteCursor, value: EDNVal): Promise<void> 
     const map = await WriteHashMap.create(cursor);
     for (const [key, val] of value.map) {
       const keyBytes = getMapKeyBytes(key);
-      const valueCursor = await map.putCursorByBytes(keyBytes);
-      await map.putKeyByBytes(keyBytes, keyBytes);
+      const valueCursor = await map.putCursor(keyBytes);
+      await map.putKey(keyBytes, keyBytes);
       await writeEdnValue(valueCursor, val);
     }
     return;

@@ -68,18 +68,18 @@ describe('High Level API', () => {
       const db = await Database.create(core, hasher);
 
       const map = await WriteHashMap.create(db.rootCursor());
-      await map.putByString('foo', new Bytes('foo'));
-      await map.putByString('bar', new Bytes('bar'));
+      await map.put('foo', new Bytes('foo'));
+      await map.put('bar', new Bytes('bar'));
 
       // init inner map
       {
-        const innerMapCursor = await map.putCursorByString('inner-map');
+        const innerMapCursor = await map.putCursor('inner-map');
         await WriteHashMap.create(innerMapCursor);
       }
 
       // re-init inner map
       {
-        const innerMapCursor = await map.putCursorByString('inner-map');
+        const innerMapCursor = await map.putCursor('inner-map');
         await WriteHashMap.create(innerMapCursor);
       }
     }
@@ -109,17 +109,17 @@ describe('High Level API', () => {
       expect(momentCursor).not.toBeNull();
       const moment = await ReadHashMap.create(momentCursor!);
 
-      const fooCursor = await moment.getCursorByString('foo');
+      const fooCursor = await moment.getCursor('foo');
       expect(fooCursor).not.toBeNull();
       const fooValue = await fooCursor!.readBytes(MAX_READ_BYTES);
       expect(new TextDecoder().decode(fooValue)).toBe('foo');
 
-      const fooSlot = await moment.getSlotByString('foo');
+      const fooSlot = await moment.getSlot('foo');
       expect(fooSlot?.tag).toBe(Tag.SHORT_BYTES);
-      const barSlot = await moment.getSlotByString('bar');
+      const barSlot = await moment.getSlot('bar');
       expect(barSlot?.tag).toBe(Tag.SHORT_BYTES);
 
-      const fruitsCursor = await moment.getCursorByString('fruits');
+      const fruitsCursor = await moment.getCursor('fruits');
       expect(fruitsCursor).not.toBeNull();
       const fruits = new ReadArrayList(fruitsCursor!);
       expect(await fruits.count()).toBe(3);
@@ -129,7 +129,7 @@ describe('High Level API', () => {
       const appleValue = await appleCursor!.readBytes(MAX_READ_BYTES);
       expect(new TextDecoder().decode(appleValue)).toBe('apple');
 
-      const peopleCursor = await moment.getCursorByString('people');
+      const peopleCursor = await moment.getCursor('people');
       expect(peopleCursor).not.toBeNull();
       const people = new ReadArrayList(peopleCursor!);
       expect(await people.count()).toBe(2);
@@ -137,11 +137,11 @@ describe('High Level API', () => {
       const aliceCursor = await people.getCursor(0);
       expect(aliceCursor).not.toBeNull();
       const alice = await ReadHashMap.create(aliceCursor!);
-      const aliceAgeCursor = await alice.getCursorByString('age');
+      const aliceAgeCursor = await alice.getCursor('age');
       expect(aliceAgeCursor).not.toBeNull();
       expect(aliceAgeCursor!.readUint()).toBe(25);
 
-      const todosCursor = await moment.getCursorByString('todos');
+      const todosCursor = await moment.getCursor('todos');
       expect(todosCursor).not.toBeNull();
       const todos = new ReadLinkedArrayList(todosCursor!);
       expect(await todos.count()).toBe(3);
@@ -167,7 +167,7 @@ describe('High Level API', () => {
 
       // Counted hash map
       {
-        const lettersCountedMapCursor = await moment.getCursorByString('letters-counted-map');
+        const lettersCountedMapCursor = await moment.getCursor('letters-counted-map');
         expect(lettersCountedMapCursor).not.toBeNull();
         const lettersCountedMap = await ReadCountedHashMap.create(lettersCountedMapCursor!);
         expect(await lettersCountedMap.count()).toBe(2);
@@ -186,11 +186,11 @@ describe('High Level API', () => {
 
       // Hash set
       {
-        const lettersSetCursor = await moment.getCursorByString('letters-set');
+        const lettersSetCursor = await moment.getCursor('letters-set');
         expect(lettersSetCursor).not.toBeNull();
         const lettersSet = await ReadHashSet.create(lettersSetCursor!);
-        expect(await lettersSet.getCursorByString('a')).not.toBeNull();
-        expect(await lettersSet.getCursorByString('c')).not.toBeNull();
+        expect(await lettersSet.getCursor('a')).not.toBeNull();
+        expect(await lettersSet.getCursor('c')).not.toBeNull();
 
         const iter = await lettersSet.iterator();
         let count = 0;
@@ -206,7 +206,7 @@ describe('High Level API', () => {
 
       // Counted hash set
       {
-        const lettersCountedSetCursor = await moment.getCursorByString('letters-counted-set');
+        const lettersCountedSetCursor = await moment.getCursor('letters-counted-set');
         expect(lettersCountedSetCursor).not.toBeNull();
         const lettersCountedSet = await ReadCountedHashSet.create(lettersCountedSetCursor!);
         expect(await lettersCountedSet.count()).toBe(2);
@@ -230,19 +230,19 @@ describe('High Level API', () => {
       expect(momentCursor).not.toBeNull();
       const moment = await ReadHashMap.create(momentCursor!);
 
-      expect(await moment.getCursorByString('bar')).toBeNull();
+      expect(await moment.getCursor('bar')).toBeNull();
 
-      const fruitsKeyCursor = await moment.getKeyCursorByString('fruits');
+      const fruitsKeyCursor = await moment.getKeyCursor('fruits');
       expect(fruitsKeyCursor).not.toBeNull();
       const fruitsKeyValue = await fruitsKeyCursor!.readBytes(MAX_READ_BYTES);
       expect(new TextDecoder().decode(fruitsKeyValue)).toBe('fruits');
 
-      const fruitsCursor = await moment.getCursorByString('fruits');
+      const fruitsCursor = await moment.getCursor('fruits');
       expect(fruitsCursor).not.toBeNull();
       const fruits = new ReadArrayList(fruitsCursor!);
       expect(await fruits.count()).toBe(2);
 
-      const fruitsKVCursor = await moment.getKeyValuePairByString('fruits');
+      const fruitsKVCursor = await moment.getKeyValuePair('fruits');
       expect(fruitsKVCursor).not.toBeNull();
       expect(fruitsKVCursor!.keyCursor.slotPtr.slot.tag).toBe(Tag.SHORT_BYTES);
       expect(fruitsKVCursor!.valueCursor.slotPtr.slot.tag).toBe(Tag.ARRAY_LIST);
@@ -252,7 +252,7 @@ describe('High Level API', () => {
       const lemonValue = await lemonCursor!.readBytes(MAX_READ_BYTES);
       expect(new TextDecoder().decode(lemonValue)).toBe('lemon');
 
-      const peopleCursor = await moment.getCursorByString('people');
+      const peopleCursor = await moment.getCursor('people');
       expect(peopleCursor).not.toBeNull();
       const people = new ReadArrayList(peopleCursor!);
       expect(await people.count()).toBe(2);
@@ -260,11 +260,11 @@ describe('High Level API', () => {
       const aliceCursor = await people.getCursor(0);
       expect(aliceCursor).not.toBeNull();
       const alice = await ReadHashMap.create(aliceCursor!);
-      const aliceAgeCursor = await alice.getCursorByString('age');
+      const aliceAgeCursor = await alice.getCursor('age');
       expect(aliceAgeCursor).not.toBeNull();
       expect(aliceAgeCursor!.readUint()).toBe(26);
 
-      const todosCursor = await moment.getCursorByString('todos');
+      const todosCursor = await moment.getCursor('todos');
       expect(todosCursor).not.toBeNull();
       const todos = new ReadLinkedArrayList(todosCursor!);
       expect(await todos.count()).toBe(1);
@@ -274,18 +274,18 @@ describe('High Level API', () => {
       const todoValue = await todoCursor!.readBytes(MAX_READ_BYTES);
       expect(new TextDecoder().decode(todoValue)).toBe('Wash the car');
 
-      const lettersCountedMapCursor = await moment.getCursorByString('letters-counted-map');
+      const lettersCountedMapCursor = await moment.getCursor('letters-counted-map');
       expect(lettersCountedMapCursor).not.toBeNull();
       const lettersCountedMap = await ReadCountedHashMap.create(lettersCountedMapCursor!);
       expect(await lettersCountedMap.count()).toBe(1);
 
-      const lettersSetCursor = await moment.getCursorByString('letters-set');
+      const lettersSetCursor = await moment.getCursor('letters-set');
       expect(lettersSetCursor).not.toBeNull();
       const lettersSet = await ReadHashSet.create(lettersSetCursor!);
-      expect(await lettersSet.getCursorByString('a')).not.toBeNull();
-      expect(await lettersSet.getCursorByString('c')).toBeNull();
+      expect(await lettersSet.getCursor('a')).not.toBeNull();
+      expect(await lettersSet.getCursor('c')).toBeNull();
 
-      const lettersCountedSetCursor = await moment.getCursorByString('letters-counted-set');
+      const lettersCountedSetCursor = await moment.getCursor('letters-counted-set');
       expect(lettersCountedSetCursor).not.toBeNull();
       const lettersCountedSet = await ReadCountedHashSet.create(lettersCountedSetCursor!);
       expect(await lettersCountedSet.count()).toBe(1);
@@ -304,29 +304,29 @@ async function testHighLevelApi(core: Core, hasher: Hasher, filePath: string | n
     await history.appendContext(await history.getSlot(-1), async (cursor) => {
       const moment = await WriteHashMap.create(cursor);
 
-      await moment.putByString('foo', new Bytes('foo'));
-      await moment.putByString('bar', new Bytes('bar'));
+      await moment.put('foo', new Bytes('foo'));
+      await moment.put('bar', new Bytes('bar'));
 
-      const fruitsCursor = await moment.putCursorByString('fruits');
+      const fruitsCursor = await moment.putCursor('fruits');
       const fruits = await WriteArrayList.create(fruitsCursor);
       await fruits.append(new Bytes('apple'));
       await fruits.append(new Bytes('pear'));
       await fruits.append(new Bytes('grape'));
 
-      const peopleCursor = await moment.putCursorByString('people');
+      const peopleCursor = await moment.putCursor('people');
       const people = await WriteArrayList.create(peopleCursor);
 
       const aliceCursor = await people.appendCursor();
       const alice = await WriteHashMap.create(aliceCursor);
-      await alice.putByString('name', new Bytes('Alice'));
-      await alice.putByString('age', new Uint(25));
+      await alice.put('name', new Bytes('Alice'));
+      await alice.put('age', new Uint(25));
 
       const bobCursor = await people.appendCursor();
       const bob = await WriteHashMap.create(bobCursor);
-      await bob.putByString('name', new Bytes('Bob'));
-      await bob.putByString('age', new Uint(42));
+      await bob.put('name', new Bytes('Bob'));
+      await bob.put('age', new Uint(42));
 
-      const todosCursor = await moment.putCursorByString('todos');
+      const todosCursor = await moment.putCursor('todos');
       const todos = await WriteLinkedArrayList.create(todosCursor);
       await todos.append(new Bytes('Pay the bills'));
       await todos.append(new Bytes('Get an oil change'));
@@ -337,31 +337,31 @@ async function testHighLevelApi(core: Core, hasher: Hasher, filePath: string | n
       await WriteHashMap.create(todoCursor);
       await todos.remove(1);
 
-      const lettersCountedMapCursor = await moment.putCursorByString('letters-counted-map');
+      const lettersCountedMapCursor = await moment.putCursor('letters-counted-map');
       const lettersCountedMap = await WriteCountedHashMap.create(lettersCountedMapCursor);
-      await lettersCountedMap.putByString('a', new Uint(1));
-      await lettersCountedMap.putByString('a', new Uint(2));
-      await lettersCountedMap.putByString('c', new Uint(2));
+      await lettersCountedMap.put('a', new Uint(1));
+      await lettersCountedMap.put('a', new Uint(2));
+      await lettersCountedMap.put('c', new Uint(2));
 
-      const lettersSetCursor = await moment.putCursorByString('letters-set');
+      const lettersSetCursor = await moment.putCursor('letters-set');
       const lettersSet = await WriteHashSet.create(lettersSetCursor);
-      await lettersSet.putByString('a');
-      await lettersSet.putByString('a');
-      await lettersSet.putByString('c');
+      await lettersSet.put('a');
+      await lettersSet.put('a');
+      await lettersSet.put('c');
 
-      const lettersCountedSetCursor = await moment.putCursorByString('letters-counted-set');
+      const lettersCountedSetCursor = await moment.putCursor('letters-counted-set');
       const lettersCountedSet = await WriteCountedHashSet.create(lettersCountedSetCursor);
-      await lettersCountedSet.putByString('a');
-      await lettersCountedSet.putByString('a');
-      await lettersCountedSet.putByString('c');
+      await lettersCountedSet.put('a');
+      await lettersCountedSet.put('a');
+      await lettersCountedSet.put('c');
 
       // big int with format tag
       const bigIntBytes = new Uint8Array(32);
       bigIntBytes.fill(42); // deterministic bytes
-      await moment.putByString('big-number', new Bytes(bigIntBytes, new TextEncoder().encode('bi')));
+      await moment.put('big-number', new Bytes(bigIntBytes, new TextEncoder().encode('bi')));
 
       // long text using writer
-      const longTextCursor = await moment.putCursorByString('long-text');
+      const longTextCursor = await moment.putCursor('long-text');
       const cursorWriter = await longTextCursor.writer();
       for (let i = 0; i < 50; i++) {
         await cursorWriter.write(new TextEncoder().encode('hello, world\n'));
@@ -373,14 +373,14 @@ async function testHighLevelApi(core: Core, hasher: Hasher, filePath: string | n
     const momentCursor = await history.getCursor(-1);
     const moment = await ReadHashMap.create(momentCursor!);
 
-    const fooCursor = await moment.getCursorByString('foo');
+    const fooCursor = await moment.getCursor('foo');
     const fooValue = await fooCursor!.readBytes(MAX_READ_BYTES);
     expect(new TextDecoder().decode(fooValue)).toBe('foo');
 
-    expect((await moment.getSlotByString('foo'))?.tag).toBe(Tag.SHORT_BYTES);
-    expect((await moment.getSlotByString('bar'))?.tag).toBe(Tag.SHORT_BYTES);
+    expect((await moment.getSlot('foo'))?.tag).toBe(Tag.SHORT_BYTES);
+    expect((await moment.getSlot('bar'))?.tag).toBe(Tag.SHORT_BYTES);
 
-    const fruitsCursor = await moment.getCursorByString('fruits');
+    const fruitsCursor = await moment.getCursor('fruits');
     const fruits = new ReadArrayList(fruitsCursor!);
     expect(await fruits.count()).toBe(3);
 
@@ -388,16 +388,16 @@ async function testHighLevelApi(core: Core, hasher: Hasher, filePath: string | n
     const appleValue = await appleCursor!.readBytes(MAX_READ_BYTES);
     expect(new TextDecoder().decode(appleValue)).toBe('apple');
 
-    const peopleCursor = await moment.getCursorByString('people');
+    const peopleCursor = await moment.getCursor('people');
     const people = new ReadArrayList(peopleCursor!);
     expect(await people.count()).toBe(2);
 
     const aliceCursor = await people.getCursor(0);
     const alice = await ReadHashMap.create(aliceCursor!);
-    const aliceAgeCursor = await alice.getCursorByString('age');
+    const aliceAgeCursor = await alice.getCursor('age');
     expect(aliceAgeCursor!.readUint()).toBe(25);
 
-    const todosCursor = await moment.getCursorByString('todos');
+    const todosCursor = await moment.getCursor('todos');
     const todos = new ReadLinkedArrayList(todosCursor!);
     expect(await todos.count()).toBe(3);
 
@@ -442,7 +442,7 @@ async function testHighLevelApi(core: Core, hasher: Hasher, filePath: string | n
 
     // Counted hash map
     {
-      const lettersCountedMapCursor = await moment.getCursorByString('letters-counted-map');
+      const lettersCountedMapCursor = await moment.getCursor('letters-counted-map');
       const lettersCountedMap = await ReadCountedHashMap.create(lettersCountedMapCursor!);
       expect(await lettersCountedMap.count()).toBe(2);
 
@@ -459,10 +459,10 @@ async function testHighLevelApi(core: Core, hasher: Hasher, filePath: string | n
 
     // Hash set
     {
-      const lettersSetCursor = await moment.getCursorByString('letters-set');
+      const lettersSetCursor = await moment.getCursor('letters-set');
       const lettersSet = await ReadHashSet.create(lettersSetCursor!);
-      expect(await lettersSet.getCursorByString('a')).not.toBeNull();
-      expect(await lettersSet.getCursorByString('c')).not.toBeNull();
+      expect(await lettersSet.getCursor('a')).not.toBeNull();
+      expect(await lettersSet.getCursor('c')).not.toBeNull();
 
       const iter = await lettersSet.iterator();
       let count = 0;
@@ -477,7 +477,7 @@ async function testHighLevelApi(core: Core, hasher: Hasher, filePath: string | n
 
     // Counted hash set
     {
-      const lettersCountedSetCursor = await moment.getCursorByString('letters-counted-set');
+      const lettersCountedSetCursor = await moment.getCursor('letters-counted-set');
       const lettersCountedSet = await ReadCountedHashSet.create(lettersCountedSetCursor!);
       expect(await lettersCountedSet.count()).toBe(2);
 
@@ -494,7 +494,7 @@ async function testHighLevelApi(core: Core, hasher: Hasher, filePath: string | n
 
     // big number with format tag
     {
-      const bigNumberCursor = await moment.getCursorByString('big-number');
+      const bigNumberCursor = await moment.getCursor('big-number');
       const bigNumber = await bigNumberCursor!.readBytesObject(MAX_READ_BYTES);
       expect(bigNumber.value.length).toBe(32);
       expect(bigNumber.value[0]).toBe(42);
@@ -503,7 +503,7 @@ async function testHighLevelApi(core: Core, hasher: Hasher, filePath: string | n
 
     // long text
     {
-      const longTextCursor = await moment.getCursorByString('long-text');
+      const longTextCursor = await moment.getCursor('long-text');
       const cursorReader = await longTextCursor!.reader();
       let lineCount = 0, line: number[] = [];
       const buf = new Uint8Array(1024);
@@ -524,57 +524,57 @@ async function testHighLevelApi(core: Core, hasher: Hasher, filePath: string | n
     await history.appendContext(await history.getSlot(-1), async (cursor) => {
       const moment = await WriteHashMap.create(cursor);
 
-      expect(await moment.removeByString('bar')).toBe(true);
-      expect(await moment.removeByString("doesn't exist")).toBe(false);
+      expect(await moment.remove('bar')).toBe(true);
+      expect(await moment.remove("doesn't exist")).toBe(false);
 
-      const fruitsCursor = await moment.putCursorByString('fruits');
+      const fruitsCursor = await moment.putCursor('fruits');
       const fruits = await WriteArrayList.create(fruitsCursor);
       await fruits.put(0, new Bytes('lemon'));
       await fruits.slice(2);
 
-      const peopleCursor = await moment.putCursorByString('people');
+      const peopleCursor = await moment.putCursor('people');
       const people = await WriteArrayList.create(peopleCursor);
       const aliceCursor = await people.putCursor(0);
       const alice = await WriteHashMap.create(aliceCursor);
-      await alice.putByString('age', new Uint(26));
+      await alice.put('age', new Uint(26));
 
-      const todosCursor = await moment.putCursorByString('todos');
+      const todosCursor = await moment.putCursor('todos');
       const todos = await WriteLinkedArrayList.create(todosCursor);
       await todos.concat(todosCursor.slot());
       await todos.slice(1, 2);
       await todos.remove(1);
 
-      const lettersCountedMapCursor = await moment.putCursorByString('letters-counted-map');
+      const lettersCountedMapCursor = await moment.putCursor('letters-counted-map');
       const lettersCountedMap = await WriteCountedHashMap.create(lettersCountedMapCursor);
-      await lettersCountedMap.removeByString('b');
-      await lettersCountedMap.removeByString('c');
+      await lettersCountedMap.remove('b');
+      await lettersCountedMap.remove('c');
 
-      const lettersSetCursor = await moment.putCursorByString('letters-set');
+      const lettersSetCursor = await moment.putCursor('letters-set');
       const lettersSet = await WriteHashSet.create(lettersSetCursor);
-      await lettersSet.removeByString('b');
-      await lettersSet.removeByString('c');
+      await lettersSet.remove('b');
+      await lettersSet.remove('c');
 
-      const lettersCountedSetCursor = await moment.putCursorByString('letters-counted-set');
+      const lettersCountedSetCursor = await moment.putCursor('letters-counted-set');
       const lettersCountedSet = await WriteCountedHashSet.create(lettersCountedSetCursor);
-      await lettersCountedSet.removeByString('b');
-      await lettersCountedSet.removeByString('c');
+      await lettersCountedSet.remove('b');
+      await lettersCountedSet.remove('c');
     });
 
     // Verify second transaction
     const momentCursor = await history.getCursor(-1);
     const moment = await ReadHashMap.create(momentCursor!);
 
-    expect(await moment.getCursorByString('bar')).toBeNull();
+    expect(await moment.getCursor('bar')).toBeNull();
 
-    const fruitsKeyCursor = await moment.getKeyCursorByString('fruits');
+    const fruitsKeyCursor = await moment.getKeyCursor('fruits');
     const fruitsKeyValue = await fruitsKeyCursor!.readBytes(MAX_READ_BYTES);
     expect(new TextDecoder().decode(fruitsKeyValue)).toBe('fruits');
 
-    const fruitsCursor = await moment.getCursorByString('fruits');
+    const fruitsCursor = await moment.getCursor('fruits');
     const fruits = new ReadArrayList(fruitsCursor!);
     expect(await fruits.count()).toBe(2);
 
-    const fruitsKVCursor = await moment.getKeyValuePairByString('fruits');
+    const fruitsKVCursor = await moment.getKeyValuePair('fruits');
     expect(fruitsKVCursor!.keyCursor.slotPtr.slot.tag).toBe(Tag.SHORT_BYTES);
     expect(fruitsKVCursor!.valueCursor.slotPtr.slot.tag).toBe(Tag.ARRAY_LIST);
 
@@ -582,16 +582,16 @@ async function testHighLevelApi(core: Core, hasher: Hasher, filePath: string | n
     const lemonValue = await lemonCursor!.readBytes(MAX_READ_BYTES);
     expect(new TextDecoder().decode(lemonValue)).toBe('lemon');
 
-    const peopleCursor = await moment.getCursorByString('people');
+    const peopleCursor = await moment.getCursor('people');
     const people = new ReadArrayList(peopleCursor!);
     expect(await people.count()).toBe(2);
 
     const aliceCursor = await people.getCursor(0);
     const alice = await ReadHashMap.create(aliceCursor!);
-    const aliceAgeCursor = await alice.getCursorByString('age');
+    const aliceAgeCursor = await alice.getCursor('age');
     expect(aliceAgeCursor!.readUint()).toBe(26);
 
-    const todosCursor = await moment.getCursorByString('todos');
+    const todosCursor = await moment.getCursor('todos');
     const todos = new ReadLinkedArrayList(todosCursor!);
     expect(await todos.count()).toBe(1);
 
@@ -599,16 +599,16 @@ async function testHighLevelApi(core: Core, hasher: Hasher, filePath: string | n
     const todoValue = await todoCursor!.readBytes(MAX_READ_BYTES);
     expect(new TextDecoder().decode(todoValue)).toBe('Wash the car');
 
-    const lettersCountedMapCursor = await moment.getCursorByString('letters-counted-map');
+    const lettersCountedMapCursor = await moment.getCursor('letters-counted-map');
     const lettersCountedMap = await ReadCountedHashMap.create(lettersCountedMapCursor!);
     expect(await lettersCountedMap.count()).toBe(1);
 
-    const lettersSetCursor = await moment.getCursorByString('letters-set');
+    const lettersSetCursor = await moment.getCursor('letters-set');
     const lettersSet = await ReadHashSet.create(lettersSetCursor!);
-    expect(await lettersSet.getCursorByString('a')).not.toBeNull();
-    expect(await lettersSet.getCursorByString('c')).toBeNull();
+    expect(await lettersSet.getCursor('a')).not.toBeNull();
+    expect(await lettersSet.getCursor('c')).toBeNull();
 
-    const lettersCountedSetCursor = await moment.getCursorByString('letters-counted-set');
+    const lettersCountedSetCursor = await moment.getCursor('letters-counted-set');
     const lettersCountedSet = await ReadCountedHashSet.create(lettersCountedSetCursor!);
     expect(await lettersCountedSet.count()).toBe(1);
   }
@@ -619,14 +619,14 @@ async function testHighLevelApi(core: Core, hasher: Hasher, filePath: string | n
     const momentCursor = await history.getCursor(0);
     const moment = await ReadHashMap.create(momentCursor!);
 
-    const fooCursor = await moment.getCursorByString('foo');
+    const fooCursor = await moment.getCursor('foo');
     const fooValue = await fooCursor!.readBytes(MAX_READ_BYTES);
     expect(new TextDecoder().decode(fooValue)).toBe('foo');
 
-    expect((await moment.getSlotByString('foo'))?.tag).toBe(Tag.SHORT_BYTES);
-    expect((await moment.getSlotByString('bar'))?.tag).toBe(Tag.SHORT_BYTES);
+    expect((await moment.getSlot('foo'))?.tag).toBe(Tag.SHORT_BYTES);
+    expect((await moment.getSlot('bar'))?.tag).toBe(Tag.SHORT_BYTES);
 
-    const fruitsCursor = await moment.getCursorByString('fruits');
+    const fruitsCursor = await moment.getCursor('fruits');
     const fruits = new ReadArrayList(fruitsCursor!);
     expect(await fruits.count()).toBe(3);
 
@@ -634,16 +634,16 @@ async function testHighLevelApi(core: Core, hasher: Hasher, filePath: string | n
     const appleValue = await appleCursor!.readBytes(MAX_READ_BYTES);
     expect(new TextDecoder().decode(appleValue)).toBe('apple');
 
-    const peopleCursor = await moment.getCursorByString('people');
+    const peopleCursor = await moment.getCursor('people');
     const people = new ReadArrayList(peopleCursor!);
     expect(await people.count()).toBe(2);
 
     const aliceCursor = await people.getCursor(0);
     const alice = await ReadHashMap.create(aliceCursor!);
-    const aliceAgeCursor = await alice.getCursorByString('age');
+    const aliceAgeCursor = await alice.getCursor('age');
     expect(aliceAgeCursor!.readUint()).toBe(25);
 
-    const todosCursor = await moment.getCursorByString('todos');
+    const todosCursor = await moment.getCursor('todos');
     const todos = new ReadLinkedArrayList(todosCursor!);
     expect(await todos.count()).toBe(3);
 
@@ -660,14 +660,14 @@ async function testHighLevelApi(core: Core, hasher: Hasher, filePath: string | n
     const momentCursor = await history.getCursor(-1);
     const moment = await ReadHashMap.create(momentCursor!);
 
-    const fooCursor = await moment.getCursorByString('foo');
+    const fooCursor = await moment.getCursor('foo');
     const fooValue = await fooCursor!.readBytes(MAX_READ_BYTES);
     expect(new TextDecoder().decode(fooValue)).toBe('foo');
 
-    expect((await moment.getSlotByString('foo'))?.tag).toBe(Tag.SHORT_BYTES);
-    expect((await moment.getSlotByString('bar'))?.tag).toBe(Tag.SHORT_BYTES);
+    expect((await moment.getSlot('foo'))?.tag).toBe(Tag.SHORT_BYTES);
+    expect((await moment.getSlot('bar'))?.tag).toBe(Tag.SHORT_BYTES);
 
-    const fruitsCursor = await moment.getCursorByString('fruits');
+    const fruitsCursor = await moment.getCursor('fruits');
     const fruits = new ReadArrayList(fruitsCursor!);
     expect(await fruits.count()).toBe(3);
 
@@ -675,16 +675,16 @@ async function testHighLevelApi(core: Core, hasher: Hasher, filePath: string | n
     const appleValue = await appleCursor!.readBytes(MAX_READ_BYTES);
     expect(new TextDecoder().decode(appleValue)).toBe('apple');
 
-    const peopleCursor = await moment.getCursorByString('people');
+    const peopleCursor = await moment.getCursor('people');
     const people = new ReadArrayList(peopleCursor!);
     expect(await people.count()).toBe(2);
 
     const aliceCursor = await people.getCursor(0);
     const alice = await ReadHashMap.create(aliceCursor!);
-    const aliceAgeCursor = await alice.getCursorByString('age');
+    const aliceAgeCursor = await alice.getCursor('age');
     expect(aliceAgeCursor!.readUint()).toBe(25);
 
-    const todosCursor = await moment.getCursorByString('todos');
+    const todosCursor = await moment.getCursor('todos');
     const todos = new ReadLinkedArrayList(todosCursor!);
     expect(await todos.count()).toBe(3);
 
@@ -713,11 +713,11 @@ async function testHighLevelApi(core: Core, hasher: Hasher, filePath: string | n
     await history.appendContext(await history.getSlot(-1), async (cursor) => {
       const moment = await WriteHashMap.create(cursor);
 
-      const fruitsCursor = await moment.getCursorByString('fruits');
+      const fruitsCursor = await moment.getCursor('fruits');
       const fruits = new ReadArrayList(fruitsCursor!);
 
       // create a new key called "food" whose initial value is based on the "fruits" list
-      const foodCursor = await moment.putCursorByString('food');
+      const foodCursor = await moment.putCursor('food');
       await foodCursor.write(fruits.slot());
 
       const food = await WriteArrayList.create(foodCursor);
@@ -730,12 +730,12 @@ async function testHighLevelApi(core: Core, hasher: Hasher, filePath: string | n
     const moment = await ReadHashMap.create(momentCursor!);
 
     // the food list includes the fruits
-    const foodCursor = await moment.getCursorByString('food');
+    const foodCursor = await moment.getCursor('food');
     const food = new ReadArrayList(foodCursor!);
     expect(await food.count()).toBe(6);
 
     // ...but the fruits list hasn't been changed
-    const fruitsCursor = await moment.getCursorByString('fruits');
+    const fruitsCursor = await moment.getCursor('fruits');
     const fruits = new ReadArrayList(fruitsCursor!);
     expect(await fruits.count()).toBe(3);
   }
@@ -748,13 +748,13 @@ async function testHighLevelApi(core: Core, hasher: Hasher, filePath: string | n
     await history.appendContext(await history.getSlot(-1), async (cursor) => {
       const moment = await WriteHashMap.create(cursor);
 
-      const bigCitiesCursor = await moment.putCursorByString('big-cities');
+      const bigCitiesCursor = await moment.putCursor('big-cities');
       const bigCities = await WriteArrayList.create(bigCitiesCursor);
       await bigCities.append(new Bytes('New York, NY'));
       await bigCities.append(new Bytes('Los Angeles, CA'));
 
       // create a new key called "cities" whose initial value is based on the "big-cities" list
-      const citiesCursor = await moment.putCursorByString('cities');
+      const citiesCursor = await moment.putCursor('cities');
       await citiesCursor.write(bigCities.slot());
 
       const cities = await WriteArrayList.create(citiesCursor);
@@ -766,12 +766,12 @@ async function testHighLevelApi(core: Core, hasher: Hasher, filePath: string | n
     const moment = await ReadHashMap.create(momentCursor!);
 
     // the cities list contains all four
-    const citiesCursor = await moment.getCursorByString('cities');
+    const citiesCursor = await moment.getCursor('cities');
     const cities = new ReadArrayList(citiesCursor!);
     expect(await cities.count()).toBe(4);
 
     // ..but so does big-cities! we did not intend to mutate this
-    const bigCitiesCursor = await moment.getCursorByString('big-cities');
+    const bigCitiesCursor = await moment.getCursor('big-cities');
     const bigCities = new ReadArrayList(bigCitiesCursor!);
     expect(await bigCities.count()).toBe(4);
 
@@ -785,7 +785,7 @@ async function testHighLevelApi(core: Core, hasher: Hasher, filePath: string | n
     await history.appendContext(await history.getSlot(-1), async (cursor) => {
       const moment = await WriteHashMap.create(cursor);
 
-      const bigCitiesCursor = await moment.putCursorByString('big-cities');
+      const bigCitiesCursor = await moment.putCursor('big-cities');
       const bigCities = await WriteArrayList.create(bigCitiesCursor);
       await bigCities.append(new Bytes('New York, NY'));
       await bigCities.append(new Bytes('Los Angeles, CA'));
@@ -794,7 +794,7 @@ async function testHighLevelApi(core: Core, hasher: Hasher, filePath: string | n
       cursor.db.freeze();
 
       // create a new key called "cities" whose initial value is based on the "big-cities" list
-      const citiesCursor = await moment.putCursorByString('cities');
+      const citiesCursor = await moment.putCursor('cities');
       await citiesCursor.write(bigCities.slot());
 
       const cities = await WriteArrayList.create(citiesCursor);
@@ -806,12 +806,12 @@ async function testHighLevelApi(core: Core, hasher: Hasher, filePath: string | n
     const moment = await ReadHashMap.create(momentCursor!);
 
     // the cities list contains all four
-    const citiesCursor = await moment.getCursorByString('cities');
+    const citiesCursor = await moment.getCursor('cities');
     const cities = new ReadArrayList(citiesCursor!);
     expect(await cities.count()).toBe(4);
 
     // and big-cities only contains the original two
-    const bigCitiesCursor = await moment.getCursorByString('big-cities');
+    const bigCitiesCursor = await moment.getCursor('big-cities');
     const bigCities = new ReadArrayList(bigCitiesCursor!);
     expect(await bigCities.count()).toBe(2);
   }
