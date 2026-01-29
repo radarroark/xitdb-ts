@@ -107,7 +107,7 @@ describe('High Level API', () => {
     {
       const momentCursor = await history.getCursor(0);
       expect(momentCursor).not.toBeNull();
-      const moment = await ReadHashMap.create(momentCursor!);
+      const moment = new ReadHashMap(momentCursor!);
 
       const fooCursor = await moment.getCursor('foo');
       expect(fooCursor).not.toBeNull();
@@ -136,7 +136,7 @@ describe('High Level API', () => {
 
       const aliceCursor = await people.getCursor(0);
       expect(aliceCursor).not.toBeNull();
-      const alice = await ReadHashMap.create(aliceCursor!);
+      const alice = new ReadHashMap(aliceCursor!);
       const aliceAgeCursor = await alice.getCursor('age');
       expect(aliceAgeCursor).not.toBeNull();
       expect(aliceAgeCursor!.readUint()).toBe(25);
@@ -156,7 +156,7 @@ describe('High Level API', () => {
       while (await peopleIter.hasNext()) {
         const personCursor = await peopleIter.next();
         expect(personCursor).not.toBeNull();
-        const person = await ReadHashMap.create(personCursor!);
+        const person = new ReadHashMap(personCursor!);
         const personIter = await person.iterator();
         while (await personIter.hasNext()) {
           const kvPairCursor = await personIter.next();
@@ -169,7 +169,7 @@ describe('High Level API', () => {
       {
         const lettersCountedMapCursor = await moment.getCursor('letters-counted-map');
         expect(lettersCountedMapCursor).not.toBeNull();
-        const lettersCountedMap = await ReadCountedHashMap.create(lettersCountedMapCursor!);
+        const lettersCountedMap = new ReadCountedHashMap(lettersCountedMapCursor!);
         expect(await lettersCountedMap.count()).toBe(2);
 
         const iter = await lettersCountedMap.iterator();
@@ -188,7 +188,7 @@ describe('High Level API', () => {
       {
         const lettersSetCursor = await moment.getCursor('letters-set');
         expect(lettersSetCursor).not.toBeNull();
-        const lettersSet = await ReadHashSet.create(lettersSetCursor!);
+        const lettersSet = new ReadHashSet(lettersSetCursor!);
         expect(await lettersSet.getCursor('a')).not.toBeNull();
         expect(await lettersSet.getCursor('c')).not.toBeNull();
 
@@ -208,7 +208,7 @@ describe('High Level API', () => {
       {
         const lettersCountedSetCursor = await moment.getCursor('letters-counted-set');
         expect(lettersCountedSetCursor).not.toBeNull();
-        const lettersCountedSet = await ReadCountedHashSet.create(lettersCountedSetCursor!);
+        const lettersCountedSet = new ReadCountedHashSet(lettersCountedSetCursor!);
         expect(await lettersCountedSet.count()).toBe(2);
 
         const iter = await lettersCountedSet.iterator();
@@ -228,7 +228,7 @@ describe('High Level API', () => {
     {
       const momentCursor = await history.getCursor(1);
       expect(momentCursor).not.toBeNull();
-      const moment = await ReadHashMap.create(momentCursor!);
+      const moment = new ReadHashMap(momentCursor!);
 
       expect(await moment.getCursor('bar')).toBeNull();
 
@@ -259,7 +259,7 @@ describe('High Level API', () => {
 
       const aliceCursor = await people.getCursor(0);
       expect(aliceCursor).not.toBeNull();
-      const alice = await ReadHashMap.create(aliceCursor!);
+      const alice = new ReadHashMap(aliceCursor!);
       const aliceAgeCursor = await alice.getCursor('age');
       expect(aliceAgeCursor).not.toBeNull();
       expect(aliceAgeCursor!.readUint()).toBe(26);
@@ -276,18 +276,18 @@ describe('High Level API', () => {
 
       const lettersCountedMapCursor = await moment.getCursor('letters-counted-map');
       expect(lettersCountedMapCursor).not.toBeNull();
-      const lettersCountedMap = await ReadCountedHashMap.create(lettersCountedMapCursor!);
+      const lettersCountedMap = new ReadCountedHashMap(lettersCountedMapCursor!);
       expect(await lettersCountedMap.count()).toBe(1);
 
       const lettersSetCursor = await moment.getCursor('letters-set');
       expect(lettersSetCursor).not.toBeNull();
-      const lettersSet = await ReadHashSet.create(lettersSetCursor!);
+      const lettersSet = new ReadHashSet(lettersSetCursor!);
       expect(await lettersSet.getCursor('a')).not.toBeNull();
       expect(await lettersSet.getCursor('c')).toBeNull();
 
       const lettersCountedSetCursor = await moment.getCursor('letters-counted-set');
       expect(lettersCountedSetCursor).not.toBeNull();
-      const lettersCountedSet = await ReadCountedHashSet.create(lettersCountedSetCursor!);
+      const lettersCountedSet = new ReadCountedHashSet(lettersCountedSetCursor!);
       expect(await lettersCountedSet.count()).toBe(1);
     }
   });
@@ -371,7 +371,7 @@ async function testHighLevelApi(core: Core, hasher: Hasher, filePath: string | n
 
     // Verify first transaction
     const momentCursor = await history.getCursor(-1);
-    const moment = await ReadHashMap.create(momentCursor!);
+    const moment = new ReadHashMap(momentCursor!);
 
     const fooCursor = await moment.getCursor('foo');
     const fooValue = await fooCursor!.readBytes(MAX_READ_BYTES);
@@ -393,7 +393,7 @@ async function testHighLevelApi(core: Core, hasher: Hasher, filePath: string | n
     expect(await people.count()).toBe(2);
 
     const aliceCursor = await people.getCursor(0);
-    const alice = await ReadHashMap.create(aliceCursor!);
+    const alice = new ReadHashMap(aliceCursor!);
     const aliceAgeCursor = await alice.getCursor('age');
     expect(aliceAgeCursor!.readUint()).toBe(25);
 
@@ -409,7 +409,7 @@ async function testHighLevelApi(core: Core, hasher: Hasher, filePath: string | n
     const peopleIter = await people.iterator();
     while (await peopleIter.hasNext()) {
       const personCursor = await peopleIter.next();
-      const person = await ReadHashMap.create(personCursor!);
+      const person = new ReadHashMap(personCursor!);
       const personIter = await person.iterator();
       while (await personIter.hasNext()) {
         const kvPairCursor = await personIter.next();
@@ -443,7 +443,7 @@ async function testHighLevelApi(core: Core, hasher: Hasher, filePath: string | n
     // Counted hash map
     {
       const lettersCountedMapCursor = await moment.getCursor('letters-counted-map');
-      const lettersCountedMap = await ReadCountedHashMap.create(lettersCountedMapCursor!);
+      const lettersCountedMap = new ReadCountedHashMap(lettersCountedMapCursor!);
       expect(await lettersCountedMap.count()).toBe(2);
 
       const iter = await lettersCountedMap.iterator();
@@ -460,7 +460,7 @@ async function testHighLevelApi(core: Core, hasher: Hasher, filePath: string | n
     // Hash set
     {
       const lettersSetCursor = await moment.getCursor('letters-set');
-      const lettersSet = await ReadHashSet.create(lettersSetCursor!);
+      const lettersSet = new ReadHashSet(lettersSetCursor!);
       expect(await lettersSet.getCursor('a')).not.toBeNull();
       expect(await lettersSet.getCursor('c')).not.toBeNull();
 
@@ -478,7 +478,7 @@ async function testHighLevelApi(core: Core, hasher: Hasher, filePath: string | n
     // Counted hash set
     {
       const lettersCountedSetCursor = await moment.getCursor('letters-counted-set');
-      const lettersCountedSet = await ReadCountedHashSet.create(lettersCountedSetCursor!);
+      const lettersCountedSet = new ReadCountedHashSet(lettersCountedSetCursor!);
       expect(await lettersCountedSet.count()).toBe(2);
 
       const iter = await lettersCountedSet.iterator();
@@ -562,7 +562,7 @@ async function testHighLevelApi(core: Core, hasher: Hasher, filePath: string | n
 
     // Verify second transaction
     const momentCursor = await history.getCursor(-1);
-    const moment = await ReadHashMap.create(momentCursor!);
+    const moment = new ReadHashMap(momentCursor!);
 
     expect(await moment.getCursor('bar')).toBeNull();
 
@@ -587,7 +587,7 @@ async function testHighLevelApi(core: Core, hasher: Hasher, filePath: string | n
     expect(await people.count()).toBe(2);
 
     const aliceCursor = await people.getCursor(0);
-    const alice = await ReadHashMap.create(aliceCursor!);
+    const alice = new ReadHashMap(aliceCursor!);
     const aliceAgeCursor = await alice.getCursor('age');
     expect(aliceAgeCursor!.readUint()).toBe(26);
 
@@ -600,16 +600,16 @@ async function testHighLevelApi(core: Core, hasher: Hasher, filePath: string | n
     expect(new TextDecoder().decode(todoValue)).toBe('Wash the car');
 
     const lettersCountedMapCursor = await moment.getCursor('letters-counted-map');
-    const lettersCountedMap = await ReadCountedHashMap.create(lettersCountedMapCursor!);
+    const lettersCountedMap = new ReadCountedHashMap(lettersCountedMapCursor!);
     expect(await lettersCountedMap.count()).toBe(1);
 
     const lettersSetCursor = await moment.getCursor('letters-set');
-    const lettersSet = await ReadHashSet.create(lettersSetCursor!);
+    const lettersSet = new ReadHashSet(lettersSetCursor!);
     expect(await lettersSet.getCursor('a')).not.toBeNull();
     expect(await lettersSet.getCursor('c')).toBeNull();
 
     const lettersCountedSetCursor = await moment.getCursor('letters-counted-set');
-    const lettersCountedSet = await ReadCountedHashSet.create(lettersCountedSetCursor!);
+    const lettersCountedSet = new ReadCountedHashSet(lettersCountedSetCursor!);
     expect(await lettersCountedSet.count()).toBe(1);
   }
 
@@ -617,7 +617,7 @@ async function testHighLevelApi(core: Core, hasher: Hasher, filePath: string | n
   {
     const history = await WriteArrayList.create(db.rootCursor());
     const momentCursor = await history.getCursor(0);
-    const moment = await ReadHashMap.create(momentCursor!);
+    const moment = new ReadHashMap(momentCursor!);
 
     const fooCursor = await moment.getCursor('foo');
     const fooValue = await fooCursor!.readBytes(MAX_READ_BYTES);
@@ -639,7 +639,7 @@ async function testHighLevelApi(core: Core, hasher: Hasher, filePath: string | n
     expect(await people.count()).toBe(2);
 
     const aliceCursor = await people.getCursor(0);
-    const alice = await ReadHashMap.create(aliceCursor!);
+    const alice = new ReadHashMap(aliceCursor!);
     const aliceAgeCursor = await alice.getCursor('age');
     expect(aliceAgeCursor!.readUint()).toBe(25);
 
@@ -658,7 +658,7 @@ async function testHighLevelApi(core: Core, hasher: Hasher, filePath: string | n
     await history.slice(1);
 
     const momentCursor = await history.getCursor(-1);
-    const moment = await ReadHashMap.create(momentCursor!);
+    const moment = new ReadHashMap(momentCursor!);
 
     const fooCursor = await moment.getCursor('foo');
     const fooValue = await fooCursor!.readBytes(MAX_READ_BYTES);
@@ -680,7 +680,7 @@ async function testHighLevelApi(core: Core, hasher: Hasher, filePath: string | n
     expect(await people.count()).toBe(2);
 
     const aliceCursor = await people.getCursor(0);
-    const alice = await ReadHashMap.create(aliceCursor!);
+    const alice = new ReadHashMap(aliceCursor!);
     const aliceAgeCursor = await alice.getCursor('age');
     expect(aliceAgeCursor!.readUint()).toBe(25);
 
@@ -727,7 +727,7 @@ async function testHighLevelApi(core: Core, hasher: Hasher, filePath: string | n
     });
 
     const momentCursor = await history.getCursor(-1);
-    const moment = await ReadHashMap.create(momentCursor!);
+    const moment = new ReadHashMap(momentCursor!);
 
     // the food list includes the fruits
     const foodCursor = await moment.getCursor('food');
@@ -763,7 +763,7 @@ async function testHighLevelApi(core: Core, hasher: Hasher, filePath: string | n
     });
 
     const momentCursor = await history.getCursor(-1);
-    const moment = await ReadHashMap.create(momentCursor!);
+    const moment = new ReadHashMap(momentCursor!);
 
     // the cities list contains all four
     const citiesCursor = await moment.getCursor('cities');
@@ -803,7 +803,7 @@ async function testHighLevelApi(core: Core, hasher: Hasher, filePath: string | n
     });
 
     const momentCursor = await history.getCursor(-1);
-    const moment = await ReadHashMap.create(momentCursor!);
+    const moment = new ReadHashMap(momentCursor!);
 
     // the cities list contains all four
     const citiesCursor = await moment.getCursor('cities');

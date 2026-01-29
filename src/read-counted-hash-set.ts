@@ -4,22 +4,17 @@ import { ReadCursor } from './read-cursor';
 import { UnexpectedTagException } from './exceptions';
 
 export class ReadCountedHashSet extends ReadHashSet {
-  protected constructor() {
+  constructor(cursor: ReadCursor) {
     super();
-  }
-
-  static override async create(cursor: ReadCursor): Promise<ReadCountedHashSet> {
-    const set = new ReadCountedHashSet();
     switch (cursor.slotPtr.slot.tag) {
       case Tag.NONE:
       case Tag.COUNTED_HASH_MAP:
       case Tag.COUNTED_HASH_SET:
-        set.cursor = cursor;
+        this.cursor = cursor;
         break;
       default:
         throw new UnexpectedTagException();
     }
-    return set;
   }
 
   async count(): Promise<number> {

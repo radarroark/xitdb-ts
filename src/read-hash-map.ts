@@ -9,20 +9,20 @@ import { Bytes } from './writeable-data';
 export class ReadHashMap implements Slotted {
   public cursor!: ReadCursor;
 
-  protected constructor() {}
-
-  static async create(cursor: ReadCursor): Promise<ReadHashMap> {
-    const map = new ReadHashMap();
-    switch (cursor.slotPtr.slot.tag) {
-      case Tag.NONE:
-      case Tag.HASH_MAP:
-      case Tag.HASH_SET:
-        map.cursor = cursor;
-        break;
-      default:
-        throw new UnexpectedTagException();
+  constructor();
+  constructor(cursor: ReadCursor);
+  constructor(cursor?: ReadCursor) {
+    if (cursor) {
+      switch (cursor.slotPtr.slot.tag) {
+        case Tag.NONE:
+        case Tag.HASH_MAP:
+        case Tag.HASH_SET:
+          this.cursor = cursor;
+          break;
+        default:
+          throw new UnexpectedTagException();
+      }
     }
-    return map;
   }
 
   slot(): Slot {

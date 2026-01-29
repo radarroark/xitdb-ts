@@ -6,16 +6,20 @@ import { ArrayListGet } from './database';
 import { UnexpectedTagException } from './exceptions';
 
 export class ReadArrayList implements Slotted {
-  public cursor: ReadCursor;
+  public cursor!: ReadCursor;
 
-  constructor(cursor: ReadCursor) {
-    switch (cursor.slotPtr.slot.tag) {
-      case Tag.NONE:
-      case Tag.ARRAY_LIST:
-        this.cursor = cursor;
-        break;
-      default:
-        throw new UnexpectedTagException();
+  constructor();
+  constructor(cursor: ReadCursor);
+  constructor(cursor?: ReadCursor) {
+    if (cursor) {
+      switch (cursor.slotPtr.slot.tag) {
+        case Tag.NONE:
+        case Tag.ARRAY_LIST:
+          this.cursor = cursor;
+          break;
+        default:
+          throw new UnexpectedTagException();
+      }
     }
   }
 

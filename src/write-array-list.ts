@@ -12,13 +12,15 @@ import {
 import type { WriteableData } from './writeable-data';
 
 export class WriteArrayList extends ReadArrayList {
-  constructor(cursor: WriteCursor) {
-    super(cursor);
+  protected constructor() {
+    super();
   }
 
   static async create(cursor: WriteCursor): Promise<WriteArrayList> {
+    const list = new WriteArrayList();
     const newCursor = await cursor.writePath([new ArrayListInit()]);
-    return new WriteArrayList(newCursor);
+    list.cursor = newCursor;
+    return list;
   }
 
   override async iterator(): Promise<WriteCursorIterator> {

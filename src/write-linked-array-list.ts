@@ -14,13 +14,15 @@ import {
 import type { WriteableData } from './writeable-data';
 
 export class WriteLinkedArrayList extends ReadLinkedArrayList {
-  constructor(cursor: WriteCursor) {
-    super(cursor);
+  protected constructor() {
+    super();
   }
 
   static async create(cursor: WriteCursor): Promise<WriteLinkedArrayList> {
+    const list = new WriteLinkedArrayList();
     const newCursor = await cursor.writePath([new LinkedArrayListInit()]);
-    return new WriteLinkedArrayList(newCursor);
+    list.cursor = newCursor;
+    return list;
   }
 
   override async iterator(): Promise<WriteCursorIterator> {

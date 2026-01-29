@@ -85,7 +85,7 @@ await history.appendContext(await history.getSlot(-1), async (cursor) => {
 // get the most recent copy of the database, like a moment
 // in time. the -1 index will return the last index in the list.
 const momentCursor = await history.getCursor(-1);
-const moment = await ReadHashMap.create(momentCursor!);
+const moment = new ReadHashMap(momentCursor!);
 
 // we can read the value of "foo" from the map by getting
 // the cursor to "foo" and then calling readBytes on it
@@ -180,7 +180,7 @@ await history.appendContext(await history.getSlot(-1), async (cursor) => {
 });
 
 const momentCursor = await history.getCursor(-1);
-const moment = await ReadHashMap.create(momentCursor!);
+const moment = new ReadHashMap(momentCursor!);
 
 // the food list includes the fruits
 const foodCursor = await moment.getCursor('food');
@@ -221,7 +221,7 @@ await history.appendContext(await history.getSlot(-1), async (cursor) => {
 });
 
 const momentCursor = await history.getCursor(-1);
-const moment = await ReadHashMap.create(momentCursor!);
+const moment = new ReadHashMap(momentCursor!);
 
 // the cities list contains all four
 const citiesCursor = await moment.getCursor('cities');
@@ -267,7 +267,7 @@ await history.appendContext(await history.getSlot(-1), async (cursor) => {
 });
 
 const momentCursor = await history.getCursor(-1);
-const moment = await ReadHashMap.create(momentCursor!);
+const moment = new ReadHashMap(momentCursor!);
 
 // the cities list contains all four
 const citiesCursor = await moment.getCursor('cities');
@@ -323,7 +323,7 @@ const people = new ReadArrayList(peopleCursor!);
 const peopleIter = await people.iterator();
 while (await peopleIter.hasNext()) {
   const personCursor = await peopleIter.next();
-  const person = await ReadHashMap.create(personCursor!);
+  const person = new ReadHashMap(personCursor!);
   const personIter = await person.iterator();
   while (await personIter.hasNext()) {
     const kvPairCursor = await personIter.next();
