@@ -5,7 +5,7 @@
   "license": "MIT",
   "repository": {
     "type": "git",
-    "url": "https://github.com/radarroark/xitdb-ts.git"
+    "url": "https://github.com/xit-vcs/xitdb-ts.git"
   },
   "type": "module",
   "main": "dist/index.js",
